@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -64,14 +65,20 @@ abstract class BuildSchemaTest extends BaseTest
             'id' => 'int(11)',
         ], 'CHARACTER SET utf8 COLLATE utf8_bin'));
 
-        $this->assertEquals($this->quoteSql('CREATE TABLE [[test]] SELECT * FROM [[clone]]'),
-            $qb->createTable('test', 'SELECT * FROM [[clone]]', ''));
+        $this->assertEquals(
+            $this->quoteSql('CREATE TABLE [[test]] SELECT * FROM [[clone]]'),
+            $qb->createTable('test', 'SELECT * FROM [[clone]]', '')
+        );
 
-        $this->assertEquals($this->quoteSql('CREATE TABLE [[test]] LIKE [[clone]]'),
-            $qb->createTable('test', 'LIKE [[clone]]', ''));
+        $this->assertEquals(
+            $this->quoteSql('CREATE TABLE [[test]] LIKE [[clone]]'),
+            $qb->createTable('test', 'LIKE [[clone]]', '')
+        );
 
-        $this->assertEquals($this->quoteSql('CREATE TABLE IF NOT EXISTS [[test]] LIKE [[clone]]'),
-            $qb->createTable('test', 'LIKE [[clone]]', '', true));
+        $this->assertEquals(
+            $this->quoteSql('CREATE TABLE IF NOT EXISTS [[test]] LIKE [[clone]]'),
+            $qb->createTable('test', 'LIKE [[clone]]', '', true)
+        );
 
         $this->assertEquals($this->quoteSql('CREATE TABLE IF NOT EXISTS [[test]] (
 	[[id]] int(11)
@@ -130,7 +137,9 @@ abstract class BuildSchemaTest extends BaseTest
     public function testAddPrimaryKey()
     {
         $qb = $this->getQueryBuilder();
-        $this->assertSql('ALTER TABLE [[test]] ADD CONSTRAINT [[user_id]] PRIMARY KEY ([[foo]])',
-            $qb->addPrimaryKey('test', 'user_id', 'foo'));
+        $this->assertSql(
+            'ALTER TABLE [[test]] ADD CONSTRAINT [[user_id]] PRIMARY KEY ([[foo]])',
+            $qb->addPrimaryKey('test', 'user_id', 'foo')
+        );
     }
 }

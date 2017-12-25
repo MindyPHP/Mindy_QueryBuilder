@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -23,11 +24,11 @@ class Adapter extends BaseAdapter implements IAdapter
      */
     public function quoteValue($str)
     {
-        if ($str === true || $str === 'true') {
+        if (true === $str || 'true' === $str) {
             return 'TRUE';
-        } elseif ($str === false || $str === 'false') {
+        } elseif (false === $str || 'false' === $str) {
             return 'FALSE';
-        } elseif ($str === null || $str === 'null') {
+        } elseif (null === $str || 'null' === $str) {
             return 'NULL';
         }
 
@@ -170,7 +171,7 @@ class Adapter extends BaseAdapter implements IAdapter
      */
     public function quoteSimpleTableName($name)
     {
-        return strpos($name, '"') !== false ? $name : '"'.$name.'"';
+        return false !== strpos($name, '"') ? $name : '"'.$name.'"';
     }
 
     /**
@@ -238,7 +239,7 @@ class Adapter extends BaseAdapter implements IAdapter
     {
         if ($value instanceof \DateTime) {
             $value = $value->format($format);
-        } elseif ($value === null) {
+        } elseif (null === $value) {
             $value = date($format);
         } elseif (is_numeric($value)) {
             $value = date($format, $value);

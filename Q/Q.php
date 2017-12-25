@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -149,7 +150,7 @@ abstract class Q
      */
     protected function parsePart(QueryBuilder $queryBuilder, $part, $operator = null)
     {
-        if ($operator === null) {
+        if (null === $operator) {
             $operator = $this->getOperator();
         }
 
@@ -160,7 +161,7 @@ abstract class Q
             foreach ($part as $key => $value) {
                 // TODO test me
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
 
                 if ($part instanceof QueryBuilder) {
@@ -171,7 +172,7 @@ abstract class Q
                     $sql[] = '('.$this->parsePart($queryBuilder, $value).')';
                 } else {
                     list($lookup, $column, $lookupValue) = $this->lookupBuilder->parseLookup($queryBuilder, $key, $value);
-                    if (empty($this->_tableAlias) === false && strpos($column, '.') === false) {
+                    if (false === empty($this->_tableAlias) && false === strpos($column, '.')) {
                         $column = $this->_tableAlias.'.'.$column;
                     }
                     $sql[] = $this->lookupBuilder->runLookup($this->adapter, $lookup, $column, $lookupValue);

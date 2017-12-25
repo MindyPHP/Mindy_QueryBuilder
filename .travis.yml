@@ -1,29 +1,16 @@
-sudo: false
 language: php
 
 php:
-    - 5.5
-    - 5.6
     - 7.0
     - 7.1
-    - hhvm
+    - 7.2
 
 services:
   - mysql
   - postgresql
 
 matrix:
-    allow_failures:
-        - php: hhvm
-    exclude:
-        -
-            php: hhvm
-            env: DB=pgsql  # PDO driver for pgsql is unsupported by HHVM (3rd party install for support)
     fast_finish: true
-
-cache:
-    directories:
-        - $HOME/.composer/cache
 
 before_install:
     - composer self-update
@@ -36,5 +23,7 @@ before_script:
   - psql -c 'create database test;' -U postgres
 
 script:
-    - if [ "$TRAVIS_PHP_VERSION" != "hhvm" ]; then php ./php-cs-fixer fix --config=.php_cs --using-cache=no --verbose --diff --dry-run; fi
-    - vendor/bin/phpunit
+    - vendor/bin/phpunit --coverage-clover=coverage.xml
+
+after_success:
+    - bash <(curl -s https://codecov.io/bash)

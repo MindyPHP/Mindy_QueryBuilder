@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -107,7 +108,7 @@ abstract class Base implements ILookupBuilder
 
     public function fetchColumnName($column)
     {
-        if ($this->fetchColumnCallback === null) {
+        if (null === $this->fetchColumnCallback) {
             return $column;
         }
 
@@ -116,7 +117,7 @@ abstract class Base implements ILookupBuilder
 
     public function runCallback(QueryBuilder $queryBuilder, $lookupNodes, $value)
     {
-        if ($this->callback === null) {
+        if (null === $this->callback) {
             return;
         }
 
@@ -125,7 +126,7 @@ abstract class Base implements ILookupBuilder
 
     public function runJoinCallback(QueryBuilder $queryBuilder, $lookupNodes)
     {
-        if ($this->joinCallback === null) {
+        if (null === $this->joinCallback) {
             return;
         }
 

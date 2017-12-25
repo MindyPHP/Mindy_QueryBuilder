@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -246,8 +247,8 @@ class QueryBuilder
         $tableAlias = $this->getAlias();
         $rawColumns = $aggregation->getFields();
         $newSelect = $this->getLookupBuilder()->buildJoin($this, $rawColumns);
-        if ($newSelect === false) {
-            if (empty($tableAlias) || $rawColumns === '*') {
+        if (false === $newSelect) {
+            if (empty($tableAlias) || '*' === $rawColumns) {
                 $columns = $rawColumns;
             } else {
                 $columns = $tableAlias.'.'.$rawColumns;
@@ -274,7 +275,7 @@ class QueryBuilder
                 $columns->setFieldsSql($this->buildColumns($columns->getFields()));
 
                 return $this->quoteSql($columns->toSQL());
-            } elseif (strpos($columns, '(') !== false) {
+            } elseif (false !== strpos($columns, '(')) {
                 return $this->quoteSql($columns);
             }
             $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
@@ -282,12 +283,12 @@ class QueryBuilder
         foreach ($columns as $i => $column) {
             if ($column instanceof Expression) {
                 $columns[$i] = $this->quoteSql($column->toSQL());
-            } elseif (strpos($column, 'AS') !== false) {
+            } elseif (false !== strpos($column, 'AS')) {
                 if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $column, $matches)) {
                     list(, $rawColumn, $rawAlias) = $matches;
                     $columns[$i] = $this->quoteColumn($rawColumn).' AS '.$this->quoteColumn($rawAlias);
                 }
-            } elseif (strpos($column, '(') === false) {
+            } elseif (false === strpos($column, '(')) {
                 $columns[$i] = $this->quoteColumn($column);
             }
         }
@@ -311,7 +312,7 @@ class QueryBuilder
                 if ($column instanceof Aggregation) {
                     $select[$alias] = $this->buildSelectFromAggregation($column);
                 } elseif (is_string($column)) {
-                    if (strpos($column, 'SELECT') !== false) {
+                    if (false !== strpos($column, 'SELECT')) {
                         $select[$alias] = $column;
                     } else {
                         $select[$alias] = $this->addColumnAlias($builder->fetchColumnName($column));
@@ -329,7 +330,7 @@ class QueryBuilder
 
     public function select($select, $distinct = null)
     {
-        if ($distinct !== null) {
+        if (null !== $distinct) {
             $this->distinct($distinct);
         }
 
@@ -379,7 +380,7 @@ class QueryBuilder
      */
     public function selectOld($select, $distinct = null)
     {
-        if ($distinct !== null) {
+        if (null !== $distinct) {
             $this->distinct($distinct);
         }
 
@@ -398,7 +399,7 @@ class QueryBuilder
                     $columns[$columnAlias] = $this->buildSelectFromAggregation($partSelect, $columnAlias);
                 } elseif ($partSelect instanceof Expression) {
                     $columns[$columnAlias] = $this->getAdapter()->quoteSql($partSelect->toSQL());
-                } elseif (strpos($partSelect, 'SELECT') !== false) {
+                } elseif (false !== strpos($partSelect, 'SELECT')) {
                     if (empty($columnAlias)) {
                         $columns[$columnAlias] = '('.$partSelect.')';
                     } else {
@@ -406,7 +407,7 @@ class QueryBuilder
                     }
                 } else {
                     $newSelect = $builder->buildJoin($this, $partSelect);
-                    if ($newSelect === false) {
+                    if (false === $newSelect) {
                         $columns[$columnAlias] = empty($tableAlias) ? $partSelect : $tableAlias.'.'.$partSelect;
                         var_dump(empty($tableAlias) ? $partSelect : $tableAlias.'.'.$partSelect);
                     } else {
@@ -540,8 +541,10 @@ class QueryBuilder
      */
     public function group($columns)
     {
-        if (!is_array($columns)) {
-            $columns = [$columns];
+        if (is_string($columns)) {
+            $columns = array_map(function ($column) {
+                return trim($column);
+            }, explode(',', $columns));
         }
         $this->_group = $columns;
 
@@ -690,7 +693,7 @@ class QueryBuilder
 
                     list($lookup, $column, $lookupValue) = $this->lookupBuilder->parseLookup($this, $key, $value);
                     $column = $this->getLookupBuilder()->fetchColumnName($column);
-                    if (empty($tableAlias) === false && strpos($column, '.') === false) {
+                    if (false === empty($tableAlias) && false === strpos($column, '.')) {
                         $column = $tableAlias.'.'.$column;
                     }
                     $parts[] = $this->lookupBuilder->runLookup($this->getAdapter(), $lookup, $column, $lookupValue);
@@ -714,7 +717,7 @@ class QueryBuilder
             $parts[] = $condition->toSQL();
         }
 
-        if (count($parts) === 1) {
+        if (1 === count($parts)) {
             return $parts[0];
         }
 
@@ -730,7 +733,7 @@ class QueryBuilder
             } else {
                 $operand = $this->parseCondition($operand);
             }
-            if ($operand !== '') {
+            if ('' !== $operand) {
                 $parts[] = $this->getAdapter()->quoteSql($operand);
             }
         }
@@ -899,11 +902,11 @@ class QueryBuilder
     public function toSQL()
     {
         $type = $this->getType();
-        if ($type == self::TYPE_SELECT) {
+        if (self::TYPE_SELECT == $type) {
             return $this->generateSelectSql();
-        } elseif ($type == self::TYPE_UPDATE) {
+        } elseif (self::TYPE_UPDATE == $type) {
             return $this->generateUpdateSql();
-        } elseif ($type == self::TYPE_DELETE) {
+        } elseif (self::TYPE_DELETE == $type) {
             return $this->generateDeleteSql();
         }
 
@@ -956,7 +959,7 @@ class QueryBuilder
      */
     public function having($having)
     {
-        if (($having instanceof Q) == false) {
+        if (false == ($having instanceof Q)) {
             $having = new QAnd($having);
         }
         $having->setLookupBuilder($this->getLookupBuilder());
@@ -1033,9 +1036,9 @@ class QueryBuilder
             return $column;
         }
 
-        if (strpos($column, '.') === false &&
-            strpos($column, '(') === false &&
-            strpos($column, 'SELECT') === false
+        if (false === strpos($column, '.') &&
+            false === strpos($column, '(') &&
+            false === strpos($column, 'SELECT')
         ) {
             return $tableAlias.'.'.$column;
         }
@@ -1046,7 +1049,7 @@ class QueryBuilder
     protected function applyTableAlias($column)
     {
         // If column already has alias - skip
-        if (strpos($column, '.') === false) {
+        if (false === strpos($column, '.')) {
             $tableAlias = $this->getAlias();
 
             return empty($tableAlias) ? $column : $tableAlias.'.'.$column;
@@ -1075,7 +1078,7 @@ class QueryBuilder
      */
     protected function buildOrderJoin($order)
     {
-        if (strpos($order, '-', 0) === false) {
+        if (false === strpos($order, '-', 0)) {
             $direction = 'ASC';
         } else {
             $direction = 'DESC';
@@ -1083,7 +1086,7 @@ class QueryBuilder
         }
         $order = $this->getLookupBuilder()->fetchColumnName($order);
         $newOrder = $this->getLookupBuilder()->buildJoin($this, $order);
-        if ($newOrder === false) {
+        if (false === $newOrder) {
             return [$order, $direction];
         }
         list($alias, $column) = $newOrder;
@@ -1102,14 +1105,14 @@ class QueryBuilder
          * не делать проверку по empty(), проваливается половина тестов с ORDER BY
          * и проваливается тест с построением JOIN по lookup
          */
-        if ($this->_order === null) {
+        if (null === $this->_order) {
             return '';
         }
 
         $order = [];
         if (is_array($this->_order)) {
             foreach ($this->_order as $column) {
-                if ($column === '?') {
+                if ('?' === $column) {
                     $order[] = $this->getAdapter()->getRandomOrder();
                 } else {
                     list($newColumn, $direction) = $this->buildOrderJoin($column);
@@ -1120,7 +1123,7 @@ class QueryBuilder
             $columns = preg_split('/\s*,\s*/', $this->_order, -1, PREG_SPLIT_NO_EMPTY);
             $order = array_map(function ($column) {
                 $temp = explode(' ', $column);
-                if (count($temp) == 2) {
+                if (2 == count($temp)) {
                     return $this->getAdapter()->quoteColumn($temp[0]).' '.$temp[1];
                 }
 

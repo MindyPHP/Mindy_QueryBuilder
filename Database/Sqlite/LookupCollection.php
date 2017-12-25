@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -62,7 +63,7 @@ class LookupCollection extends BaseLookupCollection
 
             case 'month':
                 $value = (int) $value;
-                if (strlen($value) == 1) {
+                if (1 == strlen($value)) {
                     $value = '0'.(string) $value;
                 }
 
@@ -70,7 +71,7 @@ class LookupCollection extends BaseLookupCollection
 
             case 'week_day':
                 $value = (int) $value + 1;
-                if ($value == 7) {
+                if (7 == $value) {
                     $value = 1;
                 }
 

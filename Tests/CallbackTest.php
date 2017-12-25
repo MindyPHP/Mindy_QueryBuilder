@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -93,8 +94,10 @@ class CallbackTest extends BaseTest
         ]);
         $sql = $qb->toSQL();
         $this->assertTrue($qb->hasJoin('products'));
-        $this->assertEquals('SELECT * FROM test AS t LEFT JOIN products AS products ON t.product_id=products.id LEFT JOIN categories AS categories ON products.category_id=categories.id WHERE (categories.name IN (foo, bar))',
-            str_replace(['`', "'"], '', $sql));
+        $this->assertEquals(
+            'SELECT * FROM test AS t LEFT JOIN products AS products ON t.product_id=products.id LEFT JOIN categories AS categories ON products.category_id=categories.id WHERE (categories.name IN (foo, bar))',
+            str_replace(['`', "'"], '', $sql)
+        );
     }
 
     public function testHard()
@@ -109,7 +112,9 @@ class CallbackTest extends BaseTest
         $this->assertTrue($qb->hasJoin('products'));
         $this->assertTrue($qb->hasJoin('categories'));
         $this->assertTrue($qb->hasJoin('statuses'));
-        $this->assertEquals('SELECT * FROM test LEFT JOIN products AS products ON product_id=id LEFT JOIN categories AS categories ON category.id=product.category_id LEFT JOIN statuses AS statuses ON status.id=product.status_id WHERE (name IN (foo, bar))',
-            str_replace(['`', "'"], '', $sql));
+        $this->assertEquals(
+            'SELECT * FROM test LEFT JOIN products AS products ON product_id=id LEFT JOIN categories AS categories ON category.id=product.category_id LEFT JOIN statuses AS statuses ON status.id=product.status_id WHERE (name IN (foo, bar))',
+            str_replace(['`', "'"], '', $sql)
+        );
     }
 }

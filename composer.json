@@ -8,12 +8,19 @@
             "email": "max@studio107.ru"
         }
     ],
+    "config": {
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
     "require": {
-        "php": ">=5.5.9",
-        "doctrine/dbal": "^2.5"
+        "php": ">=7.0",
+        "doctrine/dbal": "~2.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "~4.0"
+        "phpunit/phpunit": "^6.5",
+        "symfony/var-dumper": "^3.4"
     },
     "autoload": {
         "psr-4": {
@@ -30,11 +37,5 @@
         "exclude-from-classmap": [
             "/Tests/"
         ]
-    },
-    "minimum-stability": "dev",
-    "extra": {
-        "branch-alias": {
-            "dev-master": "3.6.8-dev"
-        }
     }
 }

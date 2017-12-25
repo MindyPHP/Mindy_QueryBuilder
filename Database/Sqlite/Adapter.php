@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -28,7 +29,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
      */
     public function quoteSimpleTableName($name)
     {
-        return strpos($name, '`') !== false ? $name : '`'.$name.'`';
+        return false !== strpos($name, '`') ? $name : '`'.$name.'`';
     }
 
     /**
@@ -41,7 +42,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
      */
     public function quoteSimpleColumnName($name)
     {
-        return strpos($name, '`') !== false || $name === '*' ? $name : '`'.$name.'`';
+        return false !== strpos($name, '`') || '*' === $name ? $name : '`'.$name.'`';
     }
 
     public function getLookupCollection()
@@ -209,7 +210,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
     {
         if ($value instanceof \DateTime) {
             $value = $value->format($format);
-        } elseif ($value === null) {
+        } elseif (null === $value) {
             $value = date($format);
         } elseif (is_numeric($value)) {
             $value = date($format, $value);

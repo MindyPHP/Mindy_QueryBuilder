@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -25,15 +26,15 @@ class LookupBuilder extends Base
             return $this->runCallback($queryBuilder, explode($this->separator, $rawLookup), $value);
         }
 
-        if (substr_count($rawLookup, $this->separator) == 0) {
+        if (0 == substr_count($rawLookup, $this->separator)) {
             $rawLookup = $this->fetchColumnName($rawLookup);
 
             return [$this->default, $rawLookup, $value];
         }
         $lookupNodes = explode($this->separator, $rawLookup);
-        if ($this->hasLookup(end($lookupNodes)) && substr_count($rawLookup, $this->separator) == 1) {
+        if ($this->hasLookup(end($lookupNodes)) && 1 == substr_count($rawLookup, $this->separator)) {
             list($column, $lookup) = explode($this->separator, $rawLookup);
-            if ($this->hasLookup($lookup) == false) {
+            if (false == $this->hasLookup($lookup)) {
                 throw new Exception('Unknown lookup:'.$lookup);
             }
             $column = $this->fetchColumnName($column);

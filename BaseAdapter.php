@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of Mindy Framework.
- * (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2017 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -58,10 +59,10 @@ abstract class BaseAdapter implements ISQLGenerator
      */
     public function quoteColumn($name)
     {
-        if (strpos($name, '(') !== false || strpos($name, '[[') !== false || strpos($name, '{{') !== false) {
+        if (false !== strpos($name, '(') || false !== strpos($name, '[[') || false !== strpos($name, '{{')) {
             return $name;
         }
-        if (($pos = strrpos($name, '.')) !== false) {
+        if (false !== ($pos = strrpos($name, '.'))) {
             $prefix = $this->quoteTableName(substr($name, 0, $pos)).'.';
             $name = substr($name, $pos + 1);
         } else {
@@ -82,7 +83,7 @@ abstract class BaseAdapter implements ISQLGenerator
      */
     public function quoteSimpleColumnName($name)
     {
-        return strpos($name, '"') !== false || $name === '*' ? $name : '"'.$name.'"';
+        return false !== strpos($name, '"') || '*' === $name ? $name : '"'.$name.'"';
     }
 
     /**
@@ -96,7 +97,7 @@ abstract class BaseAdapter implements ISQLGenerator
      */
     public function getRawTableName($name)
     {
-        if (strpos($name, '{{') !== false) {
+        if (false !== strpos($name, '{{')) {
             $name = preg_replace('/\\{\\{(.*?)\\}\\}/', '\1', $name);
 
             return str_replace('%', $this->getTablePrefix(), $name);
@@ -164,10 +165,10 @@ abstract class BaseAdapter implements ISQLGenerator
      */
     public function quoteTableName($name)
     {
-        if (strpos($name, '(') !== false || strpos($name, '{{') !== false) {
+        if (false !== strpos($name, '(') || false !== strpos($name, '{{')) {
             return $name;
         }
-        if (strpos($name, '.') === false) {
+        if (false === strpos($name, '.')) {
             return $this->quoteSimpleTableName($name);
         }
         $parts = explode('.', $name);
@@ -189,14 +190,15 @@ abstract class BaseAdapter implements ISQLGenerator
      */
     public function quoteSimpleTableName($name)
     {
-        return strpos($name, "'") !== false ? $name : "'".$name."'";
+        return false !== strpos($name, "'") ? $name : "'".$name."'";
     }
 
     public function quoteSql($sql)
     {
         $tablePrefix = $this->tablePrefix;
 
-        return preg_replace_callback('/(\\{\\{(%?[\w\-\. ]+%?)\\}\\}|\\[\\[([\w\-\. ]+)\\]\\])|\\@([\w\-\. \/\%\:]+)\\@/',
+        return preg_replace_callback(
+            '/(\\{\\{(%?[\w\-\. ]+%?)\\}\\}|\\[\\[([\w\-\. ]+)\\]\\])|\\@([\w\-\. \/\%\:]+)\\@/',
             function ($matches) use ($tablePrefix) {
                 if (isset($matches[4])) {
                     return $this->quoteValue($this->convertToDbValue($matches[4]));
@@ -205,14 +207,16 @@ abstract class BaseAdapter implements ISQLGenerator
                 }
 
                 return str_replace('%', $tablePrefix, $this->quoteTableName($matches[2]));
-            }, $sql);
+            },
+            $sql
+        );
     }
 
     public function convertToDbValue($rawValue)
     {
-        if ($rawValue === true || $rawValue === false || $rawValue === 'true' || $rawValue === 'false') {
+        if (true === $rawValue || false === $rawValue || 'true' === $rawValue || 'false' === $rawValue) {
             return $this->getBoolean($rawValue);
-        } elseif ($rawValue === 'null' || $rawValue === null) {
+        } elseif ('null' === $rawValue || null === $rawValue) {
             return 'NULL';
         }
 
@@ -263,7 +267,7 @@ abstract class BaseAdapter implements ISQLGenerator
                 $columns->setFieldsSql($this->buildColumns($columns->getFields()));
 
                 return $this->quoteSql($columns->toSQL());
-            } elseif (strpos($columns, '(') !== false) {
+            } elseif (false !== strpos($columns, '(')) {
                 return $this->quoteSql($columns);
             }
             $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
@@ -271,12 +275,12 @@ abstract class BaseAdapter implements ISQLGenerator
         foreach ($columns as $i => $column) {
             if ($column instanceof Expression) {
                 $columns[$i] = $this->quoteSql($column->toSQL());
-            } elseif (strpos($column, 'AS') !== false) {
+            } elseif (false !== strpos($column, 'AS')) {
                 if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $column, $matches)) {
                     list(, $rawColumn, $rawAlias) = $matches;
                     $columns[$i] = $this->quoteColumn($rawColumn).' AS '.$this->quoteColumn($rawAlias);
                 }
-            } elseif (strpos($column, '(') === false) {
+            } elseif (false === strpos($column, '(')) {
                 $columns[$i] = $this->quoteColumn($column);
             }
         }
@@ -347,11 +351,11 @@ abstract class BaseAdapter implements ISQLGenerator
                 foreach ($row as $value) {
                     if ($value instanceof Expression) {
                         $value = $value->toSQL();
-                    } elseif ($value === true || $value === 'true') {
+                    } elseif (true === $value || 'true' === $value) {
                         $value = 'TRUE';
-                    } elseif ($value === false || $value === 'false') {
+                    } elseif (false === $value || 'false' === $value) {
                         $value = 'FALSE';
-                    } elseif ($value === null || $value === 'null') {
+                    } elseif (null === $value || 'null' === $value) {
                         $value = 'NULL';
                     } elseif (is_string($value)) {
                         $value = $this->quoteValue($value);
@@ -373,11 +377,11 @@ abstract class BaseAdapter implements ISQLGenerator
         $values = array_map(function ($value) {
             if ($value instanceof Expression) {
                 $value = $value->toSQL();
-            } elseif ($value === true || $value === 'true') {
+            } elseif (true === $value || 'true' === $value) {
                 $value = 'TRUE';
-            } elseif ($value === false || $value === 'false') {
+            } elseif (false === $value || 'false' === $value) {
                 $value = 'FALSE';
-            } elseif ($value === null || $value === 'null') {
+            } elseif (null === $value || 'null' === $value) {
                 $value = 'NULL';
             } elseif (is_string($value)) {
                 $value = $this->quoteValue($value);
@@ -400,11 +404,11 @@ abstract class BaseAdapter implements ISQLGenerator
                 $val = $this->quoteSql($value->toSQL());
             } else {
                 // TODO refact, use getSqlType
-                if ($value === 'true' || $value === true) {
+                if ('true' === $value || true === $value) {
                     $val = 'TRUE';
-                } elseif ($value === null || $value === 'null') {
+                } elseif (null === $value || 'null' === $value) {
                     $val = 'NULL';
-                } elseif ($value === false || $value === 'false') {
+                } elseif (false === $value || 'false' === $value) {
                     $val = 'FALSE';
                 } else {
                     $val = $this->quoteValue($value);
@@ -533,11 +537,11 @@ abstract class BaseAdapter implements ISQLGenerator
      */
     public function getSqlType($value)
     {
-        if ($value === 'true' || $value === true) {
+        if ('true' === $value || true === $value) {
             return 'TRUE';
-        } elseif ($value === null || $value === 'null') {
+        } elseif (null === $value || 'null' === $value) {
             return 'NULL';
-        } elseif ($value === false || $value === 'false') {
+        } elseif (false === $value || 'false' === $value) {
             return 'FALSE';
         }
 
@@ -590,10 +594,10 @@ abstract class BaseAdapter implements ISQLGenerator
             .' FOREIGN KEY ('.$this->buildColumns($columns).')'
             .' REFERENCES '.$this->quoteTableName($refTable)
             .' ('.$this->buildColumns($refColumns).')';
-        if ($delete !== null) {
+        if (null !== $delete) {
             $sql .= ' ON DELETE '.$delete;
         }
-        if ($update !== null) {
+        if (null !== $update) {
             $sql .= ' ON UPDATE '.$update;
         }
 
@@ -682,7 +686,7 @@ abstract class BaseAdapter implements ISQLGenerator
             } else {
                 $tableRaw = $this->getRawTableName($table);
             }
-            if (strpos($tableRaw, 'SELECT') !== false) {
+            if (false !== strpos($tableRaw, 'SELECT')) {
                 $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->quoteTableName($tableAlias));
             } else {
                 $quotedTableNames[] = $this->quoteTableName($tableRaw).(is_numeric($tableAlias) ? '' : ' AS '.$this->quoteTableName($tableAlias));
@@ -721,7 +725,7 @@ abstract class BaseAdapter implements ISQLGenerator
             }
         }
 
-        if (strpos($tableName, 'SELECT') !== false) {
+        if (false !== strpos($tableName, 'SELECT')) {
             return $joinType.' ('.$this->quoteSql($tableName).')'.(empty($alias) ? '' : ' AS '.$this->quoteColumn($alias)).' ON '.implode(',', $onSQL);
         }
 
@@ -812,14 +816,12 @@ abstract class BaseAdapter implements ISQLGenerator
         }
 
         if (is_string($columns)) {
-            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
             $quotedColumns = array_map(function ($column) {
                 return $this->quoteColumn($column);
-            }, $columns);
+            }, explode(',', $columns));
 
             return implode(', ', $quotedColumns);
         }
-
         $group = [];
         foreach ($columns as $column) {
             $group[] = $this->quoteColumn($column);
@@ -844,7 +846,7 @@ abstract class BaseAdapter implements ISQLGenerator
             $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
             $quotedColumns = array_map(function ($column) {
                 $temp = explode(' ', $column);
-                if (count($temp) == 2) {
+                if (2 == count($temp)) {
                     return $this->quoteColumn($temp[0]).' '.$temp[1];
                 }
 
@@ -857,7 +859,7 @@ abstract class BaseAdapter implements ISQLGenerator
         $order = [];
         foreach ($columns as $key => $column) {
             if (is_numeric($key)) {
-                if (strpos($column, '-', 0) === 0) {
+                if (0 === strpos($column, '-', 0)) {
                     $column = substr($column, 1);
                     $direction = 'DESC';
                 } else {
@@ -887,7 +889,7 @@ abstract class BaseAdapter implements ISQLGenerator
             return $selectSql.'*';
         }
 
-        if (is_array($columns) === false) {
+        if (false === is_array($columns)) {
             $columns = [$columns];
         }
 
@@ -907,14 +909,14 @@ abstract class BaseAdapter implements ISQLGenerator
             }
 
             if (!empty($subQuery)) {
-                if (strpos($subQuery, 'SELECT') !== false) {
+                if (false !== strpos($subQuery, 'SELECT')) {
                     $value = '('.$subQuery.') AS '.$this->quoteColumn($column);
                 } else {
                     $value = $this->quoteColumn($subQuery).' AS '.$this->quoteColumn($column);
                 }
             } else {
-                if (strpos($column, ',') === false && strpos($column, 'AS') !== false) {
-                    if (strpos($column, 'AS') !== false) {
+                if (false === strpos($column, ',') && false !== strpos($column, 'AS')) {
+                    if (false !== strpos($column, 'AS')) {
                         list($rawColumn, $rawAlias) = explode('AS', $column);
                     } else {
                         $rawColumn = $column;
@@ -922,14 +924,14 @@ abstract class BaseAdapter implements ISQLGenerator
                     }
 
                     $value = empty($rawAlias) ? $this->quoteColumn(trim($rawColumn)) : $this->quoteColumn(trim($rawColumn)).' AS '.$this->quoteColumn(trim($rawAlias));
-                } elseif (strpos($column, ',') !== false) {
+                } elseif (false !== strpos($column, ',')) {
                     $newSelect = [];
                     foreach (explode(',', $column) as $item) {
                         // if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $item, $matches)) {
                         //     list(, $rawColumn, $rawAlias) = $matches;
                         // }
 
-                        if (strpos($item, 'AS') !== false) {
+                        if (false !== strpos($item, 'AS')) {
                             list($rawColumn, $rawAlias) = explode('AS', $item);
                         } else {
                             $rawColumn = $item;
