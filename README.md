@@ -1,7 +1,7 @@
 # Query_builder Component
 
-[![Build Status](https://travis-ci.org/MindyPHP/Query_builder.svg?branch=master)](https://travis-ci.org/MindyPHP/Query_builder)
-[![codecov](https://codecov.io/gh/MindyPHP/Query_builder/branch/master/graph/badge.svg)](https://codecov.io/gh/MindyPHP/Query_builder)
+[![Build Status](https://travis-ci.org/MindyPHP/QueryBuilder.svg?branch=master)](https://travis-ci.org/MindyPHP/QueryBuilder)
+[![codecov](https://codecov.io/gh/MindyPHP/QueryBuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/MindyPHP/QueryBuilder)
 [![Latest Stable Version](https://poser.pugx.org/mindy/query_builder/v/stable.svg)](https://packagist.org/packages/mindy/query_builder)
 [![Total Downloads](https://poser.pugx.org/mindy/query_builder/downloads.svg)](https://packagist.org/packages/mindy/query_builder)
 
