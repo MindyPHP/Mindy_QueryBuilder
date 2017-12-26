@@ -19,6 +19,13 @@ class BuildGroupTest extends BaseTest
         $qb->group(['id', 'name']);
         $this->assertSql('GROUP BY [[id]], [[name]]', $qb->buildGroup());
     }
+    public function testaddGroupBy()
+    {
+        $qb = $this->getQueryBuilder();
+        $qb->group(['id']);
+        $qb->addGroupBy('name');
+        $this->assertSql('GROUP BY [[id]], [[name]]', $qb->buildGroup());
+    }
 
     public function testString()
     {

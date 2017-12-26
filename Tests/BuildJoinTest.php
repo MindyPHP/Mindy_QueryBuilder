@@ -69,6 +69,13 @@ class BuildJoinTest extends BaseTest
         $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $qb->buildJoin());
     }
 
+    public function testSimpleRaw()
+    {
+        $qb = $this->getQueryBuilder();
+        $qb->join('LEFT JOIN [[test]] ON [[test]].[[id]] = [[foo]].[[bar_id]]');
+        $this->assertSql('LEFT JOIN [[test]] ON [[test]].[[id]] = [[foo]].[[bar_id]]', $qb->buildJoin());
+    }
+
     public function testSimpleClone()
     {
         $qb = $this->getQueryBuilder();
