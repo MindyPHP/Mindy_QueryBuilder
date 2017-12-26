@@ -213,7 +213,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
         } elseif (null === $value) {
             $value = date($format);
         } elseif (is_numeric($value)) {
-            $value = date($format, (int)$value);
+            $value = date($format, (int) $value);
         } elseif (is_string($value)) {
             $value = date($format, strtotime($value));
         }
