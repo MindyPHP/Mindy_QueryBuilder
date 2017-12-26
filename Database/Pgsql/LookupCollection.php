@@ -68,22 +68,40 @@ class LookupCollection extends BaseLookupCollection
                 return $adapter->quoteColumn($column).'~*'.$adapter->quoteValue($value);
 
             case 'contains':
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
                 return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.$value.'%');
 
             case 'icontains':
-                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower($value, 'UTF-8').'%');
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8').'%');
 
             case 'startswith':
-                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue($value.'%');
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue((string)$value.'%');
 
             case 'istartswith':
-                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue(mb_strtolower($value, 'UTF-8').'%');
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue(mb_strtolower((string)$value, 'UTF-8').'%');
 
             case 'endswith':
-                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.$value);
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.(string)$value);
 
             case 'iendswith':
-                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower($value, 'UTF-8'));
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8'));
         }
 
         return parent::process($adapter, $lookup, $column, $value);

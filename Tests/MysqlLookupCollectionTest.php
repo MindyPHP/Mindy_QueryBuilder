@@ -17,6 +17,17 @@ class MysqlLookupCollectionTest extends BaseTest
     public function providerLookups()
     {
         return [
+            ['exact', 'name', new \DateTime(), sprintf("`name`='%s'", date('Y-m-d H:i:s'))],
+            ['gte', 'name', new \DateTime(), sprintf("`name`>='%s'", date('Y-m-d H:i:s'))],
+            ['lte', 'name', new \DateTime(), sprintf("`name`<='%s'", date('Y-m-d H:i:s'))],
+            ['lt', 'name', new \DateTime(), sprintf("`name`<'%s'", date('Y-m-d H:i:s'))],
+            ['gt', 'name', new \DateTime(), sprintf("`name`>'%s'", date('Y-m-d H:i:s'))],
+            ['range', 'name', [1, 2], "`name` BETWEEN 1 AND 2"],
+            ['isnt', 'name', null, "`name` IS NOT NULL"],
+            ['in', 'name', [1, 2], "`name` IN (1, 2)"],
+            ['in', 'name', 1, "`name` IN (1)"],
+            ['unknown', 'name', 1, null],
+            ['contains', 'name', true, "`name` LIKE '%1%'"],
             ['icontains', 'name', 'foo', "LOWER(`name`) LIKE '%foo%'"],
             ['icontains', 'name', 1, "LOWER(`name`) LIKE '%1%'"],
             ['icontains', 'name', true, "LOWER(`name`) LIKE '%1%'"],

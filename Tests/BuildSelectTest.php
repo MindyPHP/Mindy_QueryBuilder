@@ -59,6 +59,12 @@ class BuildSelectTest extends BaseTest
         $this->assertSql('SELECT [[id]], [[root]], [[lft]], [[rgt]], [[rgt]]-[[lft]]-1 AS [[move]]', $qb->buildSelect());
     }
 
+    public function testRaw()
+    {
+        $qb = $this->getQueryBuilder();
+        $this->assertSql('SELECT [[id]] + 1', $qb->raw('SELECT [[id]] + 1'));
+    }
+
     public function testArray()
     {
         $qb = $this->getQueryBuilder();

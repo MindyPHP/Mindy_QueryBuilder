@@ -273,23 +273,19 @@ class QueryBuilder
         }
 
         $builder = $this->getLookupBuilder();
-        if (is_array($this->_select)) {
-            $select = [];
-            foreach ($this->_select as $alias => $column) {
-                if ($column instanceof Aggregation) {
-                    $select[$alias] = $this->buildSelectFromAggregation($column);
-                } elseif (is_string($column)) {
-                    if (false !== strpos($column, 'SELECT')) {
-                        $select[$alias] = $column;
-                    } else {
-                        $select[$alias] = $this->addColumnAlias($builder->fetchColumnName($column));
-                    }
-                } else {
+        $select = [];
+        foreach ($this->_select as $alias => $column) {
+            if ($column instanceof Aggregation) {
+                $select[$alias] = $this->buildSelectFromAggregation($column);
+            } elseif (is_string($column)) {
+                if (false !== strpos($column, 'SELECT')) {
                     $select[$alias] = $column;
+                } else {
+                    $select[$alias] = $this->addColumnAlias($builder->fetchColumnName($column));
                 }
+            } else {
+                $select[$alias] = $column;
             }
-        } elseif (is_string($this->_select)) {
-            $select = $this->addColumnAlias($this->_select);
         }
 
         return $this->getAdapter()->sqlSelect($select, $this->_distinct);
@@ -335,60 +331,6 @@ class QueryBuilder
             $parts[] = $select;
         }
         $this->_select = $parts;
-
-        return $this;
-    }
-
-    /**
-     * @param $select array|string columns
-     * @param $distinct array|string columns
-     *
-     * @return $this
-     */
-    public function selectOld($select, $distinct = null)
-    {
-        if (null !== $distinct) {
-            $this->distinct($distinct);
-        }
-
-        if (empty($select)) {
-            $this->_select = [];
-
-            return $this;
-        }
-
-        $tableAlias = $this->getAlias();
-        $columns = [];
-        $builder = $this->getLookupBuilder();
-        if (is_array($select)) {
-            foreach ($select as $columnAlias => $partSelect) {
-                if ($partSelect instanceof Aggregation) {
-                    $columns[$columnAlias] = $this->buildSelectFromAggregation($partSelect, $columnAlias);
-                } elseif ($partSelect instanceof Expression) {
-                    $columns[$columnAlias] = $this->getAdapter()->quoteSql($partSelect->toSQL());
-                } elseif (false !== strpos($partSelect, 'SELECT')) {
-                    if (empty($columnAlias)) {
-                        $columns[$columnAlias] = '('.$partSelect.')';
-                    } else {
-                        $columns[$columnAlias] = '('.$partSelect.') AS '.$columnAlias;
-                    }
-                } else {
-                    $newSelect = $builder->buildJoin($this, $partSelect);
-                    if (false === $newSelect) {
-                        $columns[$columnAlias] = empty($tableAlias) ? $partSelect : $tableAlias.'.'.$partSelect;
-                        var_dump(empty($tableAlias) ? $partSelect : $tableAlias.'.'.$partSelect);
-                    } else {
-                        list($alias, $joinColumn) = $newSelect;
-                        $columns[$columnAlias] = $alias.'.'.$joinColumn.' AS '.$partSelect;
-                    }
-                }
-            }
-        } elseif ($select instanceof Aggregation) {
-            $columns = $this->buildSelectFromAggregation($select);
-        } else {
-            $columns = $select;
-        }
-        $this->_select = $this->getAdapter()->buildColumns($columns);
 
         return $this;
     }

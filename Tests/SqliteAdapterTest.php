@@ -18,15 +18,6 @@ class SqliteAdapterTest extends BaseTest
      */
     protected $driver = 'sqlite';
 
-    public function tearDown()
-    {
-        try {
-            $this->connection->getSchemaManager()->dropTable('test_rename');
-        } catch (\Exception $e) {
-
-        }
-    }
-
     public function testAdapter()
     {
         $adapter = $this->getAdapter();
