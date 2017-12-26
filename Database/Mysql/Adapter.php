@@ -117,7 +117,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
         return $value ? 1 : 0;
     }
 
-    protected function formatDateTime($value, $format)
+    public function formatDateTime($value, $format)
     {
         if ($value instanceof \DateTime) {
             $value = $value->format($format);
@@ -174,7 +174,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
      */
     public function sqlResetSequence($tableName, $value)
     {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' AUTO_INCREMENT='.$this->quoteValue($value);
+        return 'ALTER TABLE '.$this->quoteTableName($tableName).' AUTO_INCREMENT='.(int)$value;
     }
 
     /**
@@ -221,15 +221,8 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
     {
         $quotedTable = $this->quoteTableName($tableName);
         $row = $this->driver->query('SHOW CREATE TABLE '.$quotedTable)->fetch();
-        if (false === $row) {
-            throw new Exception("Unable to find column '$oldName' in table '$tableName'.");
-        }
-        if (isset($row['Create Table'])) {
-            $sql = $row['Create Table'];
-        } else {
-            $row = array_values($row);
-            $sql = $row[1];
-        }
+        $sql = $row['Create Table'];
+
         if (preg_match_all('/^\s*`(.*?)`\s+(.*?),?$/m', $sql, $matches)) {
             foreach ($matches[1] as $i => $c) {
                 if ($c === $oldName) {
@@ -241,7 +234,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
             }
         }
 
-        return "ALTER TABLE {$quotedTable} CHANGE ".$this->quoteColumn($oldName).' '.$this->quoteColumn($newName);
+        throw new Exception("Unable to find '$oldName' in table '$tableName'.");
     }
 
     /**

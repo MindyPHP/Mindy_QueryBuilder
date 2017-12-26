@@ -41,10 +41,16 @@ class LookupCollection extends BaseLookupCollection
     {
         switch ($lookup) {
             case 'regex':
-                return 'BINARY '.$adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue($value);
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return 'BINARY '.$adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue((string)$value);
 
             case 'iregex':
-                return $adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue($value);
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return $adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue((string)$value);
 
             case 'second':
                 return 'EXTRACT(SECOND FROM '.$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) $value);
