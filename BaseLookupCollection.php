@@ -105,10 +105,16 @@ class BaseLookupCollection implements ILookupCollection
                 return $adapter->quoteColumn($column).' '.((bool) $value ? 'IS NULL' : 'IS NOT NULL');
 
             case 'contains':
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
                 return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.$value.'%');
 
             case 'icontains':
-                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower($value, 'UTF-8').'%');
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8').'%');
 
             case 'startswith':
                 return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue($value.'%');
@@ -120,7 +126,7 @@ class BaseLookupCollection implements ILookupCollection
                 return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.$value);
 
             case 'iendswith':
-                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower($value, 'UTF-8'));
+                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8'));
 
             case 'in':
                 if (is_array($value)) {

@@ -63,7 +63,7 @@ class LookupCollection extends BaseLookupCollection
 
             case 'month':
                 $value = (int) $value;
-                if (1 == strlen($value)) {
+                if (1 == strlen((string)$value)) {
                     $value = '0'.(string) $value;
                 }
 
@@ -71,7 +71,7 @@ class LookupCollection extends BaseLookupCollection
 
             case 'week_day':
                 $value = (int) $value + 1;
-                if (7 == $value) {
+                if (7 >= $value) {
                     $value = 1;
                 }
 

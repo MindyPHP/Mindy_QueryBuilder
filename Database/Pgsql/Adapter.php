@@ -235,7 +235,7 @@ class Adapter extends BaseAdapter implements IAdapter
      *
      * @return bool|string
      */
-    protected function formatDateTime($value, $format)
+    public function formatDateTime($value, $format)
     {
         if ($value instanceof \DateTime) {
             $value = $value->format($format);

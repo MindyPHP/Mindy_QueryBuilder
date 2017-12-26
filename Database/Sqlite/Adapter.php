@@ -206,7 +206,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
      *
      * @return string
      */
-    protected function formatDateTime($value, $format)
+    public function formatDateTime($value, $format)
     {
         if ($value instanceof \DateTime) {
             $value = $value->format($format);
@@ -301,5 +301,21 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
     public function sqlCheckIntegrity($check = true, $schema = '', $table = '')
     {
         return 'PRAGMA foreign_keys='.$this->getBoolean($check);
+    }
+
+    /**
+     * Prepare value for db.
+     *
+     * @param $value
+     *
+     * @return int
+     */
+    public function prepareValue($value)
+    {
+        if ('boolean' === gettype($value)) {
+            return (int) $value;
+        }
+
+        return parent::prepareValue($value);
     }
 }
