@@ -52,7 +52,7 @@ class BaseLookupCollection implements ILookupCollection
                     $sqlValue = $value->toSQL();
                 } elseif ($value instanceof QueryBuilder) {
                     $sqlValue = '('.$value->toSQL().')';
-                } elseif (false !== strpos($value, 'SELECT')) {
+                } elseif (false !== strpos((string)$value, 'SELECT')) {
                     $sqlValue = '('.$value.')';
                 } else {
                     $sqlValue = $adapter->quoteValue($value);
