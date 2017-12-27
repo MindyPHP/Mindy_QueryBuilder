@@ -12,42 +12,19 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
-use Mindy\QueryBuilder\Interfaces\ICallback;
 use Mindy\QueryBuilder\Interfaces\ILookupBuilder;
 
 class QueryBuilderFactory
 {
     /**
-     * @var BaseAdapter
-     */
-    protected $adapter;
-    /**
-     * @var ILookupBuilder
-     */
-    protected $lookupBuilder;
-    /**
-     * @var Connection
-     */
-    protected $connection;
-
-    /**
-     * QueryBuilder constructor.
-     *
-     * @param Connection     $connection
-     * @param BaseAdapter    $adapter
+     * @param Connection $connection
+     * @param BaseAdapter $adapter
      * @param ILookupBuilder $lookupBuilder
      *
-     * @internal param ICallback $callback
+     * @return QueryBuilder
      */
-    public function __construct(Connection $connection, BaseAdapter $adapter, ILookupBuilder $lookupBuilder)
+    public static function getQueryBuilder(Connection $connection, BaseAdapter $adapter, ILookupBuilder $lookupBuilder)
     {
-        $this->connection = $connection;
-        $this->adapter = $adapter;
-        $this->lookupBuilder = $lookupBuilder;
-    }
-
-    public function getQueryBuilder()
-    {
-        return new QueryBuilder($this->connection, $this->adapter, $this->lookupBuilder);
+        return new QueryBuilder($connection, $adapter, $lookupBuilder);
     }
 }

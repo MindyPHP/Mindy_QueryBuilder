@@ -19,10 +19,10 @@ class QueryBuilderFactoryTest extends BaseTest
 {
     public function testFactory()
     {
-        $factory = new QueryBuilderFactory($this->connection, $this->getAdapter(), new LookupBuilder());
-        $this->assertInstanceOf(QueryBuilder::class, $factory->getQueryBuilder());
-        $this->assertInstanceOf(Connection::class, $factory->getQueryBuilder()->getConnection());
-        $this->assertInstanceOf(AbstractPlatform::class, $factory->getQueryBuilder()->getDatabasePlatform());
+        $qb = QueryBuilderFactory::getQueryBuilder($this->connection, $this->getAdapter(), new LookupBuilder());
+        $this->assertInstanceOf(QueryBuilder::class, $qb);
+        $this->assertInstanceOf(Connection::class, $qb->getConnection());
+        $this->assertInstanceOf(AbstractPlatform::class, $qb->getDatabasePlatform());
     }
 
     /**

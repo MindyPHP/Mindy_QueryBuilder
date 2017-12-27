@@ -44,6 +44,8 @@ class PgsqlLookupCollectionTest extends BaseTest
             ['month', 'name', 1, "EXTRACT(MONTH FROM \"name\"::timestamp)='1'"],
             ['day', 'name', 1, "EXTRACT(DAY FROM \"name\"::timestamp)='1'"],
             ['week_day', 'name', 1, "EXTRACT(DOW FROM \"name\"::timestamp)='1'"],
+            ['week_day', 'name', 6, "EXTRACT(DOW FROM \"name\"::timestamp)='6'"],
+            ['week_day', 'name', 7, "EXTRACT(DOW FROM \"name\"::timestamp)='0'"],
         ];
     }
 

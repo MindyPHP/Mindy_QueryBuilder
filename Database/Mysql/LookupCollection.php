@@ -71,6 +71,21 @@ class LookupCollection extends BaseLookupCollection
                 return 'EXTRACT(MONTH FROM '.$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) $value);
 
             case 'week_day':
+                $value = (int) $value;
+                if ($value < 1 || $value > 7) {
+                    throw new \LogicException('Incorrect day of week. Available range 0-6 where 0 - monday.');
+                }
+
+                /*
+                DAYOFWEEK(timestamp)            1-7    Sunday=1
+                WEEKDAY(timestamp)              0-6    Monday=0
+                 */
+                if (7 === $value) {
+                    $value = 1;
+                } else {
+                    $value += 1;
+                }
+
                 return 'DAYOFWEEK('.$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) $value);
         }
 

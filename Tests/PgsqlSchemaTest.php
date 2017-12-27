@@ -15,6 +15,12 @@ class PgsqlSchemaTest extends SchemaTest
 {
     protected $driver = 'pgsql';
 
+    public function testRandomOrder()
+    {
+        $adapter = $this->getQueryBuilder()->getAdapter();
+        $this->assertEquals('RANDOM()', $adapter->getRandomOrder());
+    }
+
     public function testLimitOffset()
     {
         $sql = $this->getQueryBuilder()->from('profile')->offset(1)->toSQL();

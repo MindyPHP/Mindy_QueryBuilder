@@ -26,19 +26,23 @@ abstract class BaseTest extends TestCase
      * @var Connection
      */
     protected $connection;
+    /**
+     * @var array
+     */
+    protected $config;
 
     protected function setUp()
     {
         parent::setUp();
 
-        $config = require __DIR__.'/config/'.(@getenv('TRAVIS') ? 'config_travis.php' : 'config.php');
-        if (false === isset($config[$this->driver])) {
+        $this->config = require __DIR__.'/config/'.(@getenv('TRAVIS') ? 'config_travis.php' : 'config.php');
+        if (false === isset($this->config[$this->driver])) {
             $this->markTestSkipped('Missing config for '.$this->driver.' driver');
         }
 
         $driverConfig = [];
         if (extension_loaded('pdo_'.$this->driver)) {
-            $driverConfig = $config[$this->driver];
+            $driverConfig = $this->config[$this->driver];
         } else {
             $this->markTestSkipped('Missing pdo extension for '.$this->driver.' driver');
         }

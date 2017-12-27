@@ -70,12 +70,21 @@ class LookupCollection extends BaseLookupCollection
                 return "strftime('%m', ".$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) $value);
 
             case 'week_day':
-                $value = (int) $value + 1;
-                if (7 >= $value) {
-                    $value = 1;
+                $value = (int) $value;
+                if ($value < 1 || $value > 7) {
+                    throw new \LogicException('Incorrect day of week. Available range 0-6 where 0 - monday.');
                 }
 
-                return "strftime('%w', ".$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) $value);
+                /*
+                 * %w - day of week 0-6 with Sunday==0
+                 */
+                if ($value === 7) {
+                    $value = 1;
+                } else {
+                    $value += 1;
+                }
+
+                return "strftime('%w', ".$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) ($value - 1));
 
             case 'range':
                 list($min, $max) = $value;
