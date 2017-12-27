@@ -43,7 +43,10 @@ class MysqlLookupCollectionTest extends BaseTest
             ['year', 'name', 1, "EXTRACT(YEAR FROM `name`)='1'"],
             ['month', 'name', 1, "EXTRACT(MONTH FROM `name`)='1'"],
             ['day', 'name', 1, "EXTRACT(DAY FROM `name`)='1'"],
-            ['week_day', 'name', 1, "DAYOFWEEK(`name`)='1'"],
+            // Monday
+            ['week_day', 'name', 1, "DAYOFWEEK(`name`)='2'"],
+            // Sunday
+            ['week_day', 'name', 7, "DAYOFWEEK(`name`)='1'"],
         ];
     }
 

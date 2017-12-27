@@ -15,19 +15,7 @@ abstract class SchemaTest extends BaseTest
 {
     abstract public function testLimitOffset();
 
-    public function testRandomOrder()
-    {
-        $adapter = $this->getQueryBuilder()->getAdapter();
-        switch ($this->getConnection()->getDriver()->getName()) {
-            case 'sqlite':
-            case 'pgsql':
-                $this->assertEquals('RANDOM()', $adapter->getRandomOrder());
-                break;
-            case 'mysql':
-                $this->assertEquals('RAND()', $adapter->getRandomOrder());
-                break;
-        }
-    }
+    abstract public function testRandomOrder();
 
     public function testDistinct()
     {

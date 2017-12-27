@@ -32,8 +32,9 @@ class SqliteLookupCollectionTest extends BaseTest
             ['year', 'name', 1, "strftime('%Y', `name`)='1'"],
             ['month', 'name', 1, "strftime('%m', `name`)='01'"],
             ['day', 'name', 1, "strftime('%d', `name`)='1'"],
+            // Monday
             ['week_day', 'name', 1, "strftime('%w', `name`)='1'"],
-            ['week_day', 'name', 6, "strftime('%w', `name`)='1'"],
+            ['week_day', 'name', 7, "strftime('%w', `name`)='0'"],
         ];
     }
 

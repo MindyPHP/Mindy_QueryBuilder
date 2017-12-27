@@ -15,6 +15,12 @@ class MysqlSchemaTest extends SchemaTest
 {
     protected $driver = 'mysql';
 
+    public function testRandomOrder()
+    {
+        $adapter = $this->getQueryBuilder()->getAdapter();
+        $this->assertEquals('RAND()', $adapter->getRandomOrder());
+    }
+
     public function testLimitOffset()
     {
         $sql = $this->getQueryBuilder()->from('profile')->offset(1)->toSQL();

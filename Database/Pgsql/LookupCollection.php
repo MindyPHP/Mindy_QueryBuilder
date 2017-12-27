@@ -59,7 +59,22 @@ class LookupCollection extends BaseLookupCollection
                 return 'EXTRACT(MONTH FROM '.$adapter->quoteColumn($column).'::timestamp)='.$adapter->quoteValue((string) $value);
 
             case 'week_day':
-                return 'EXTRACT(DOW FROM '.$adapter->quoteColumn($column).'::timestamp)='.$adapter->quoteValue((string) $value);
+                $value = (int) $value;
+                if ($value < 1 || $value > 7) {
+                    throw new \LogicException('Incorrect day of week. Available range 0-6 where 0 - monday.');
+                }
+
+                /*
+                EXTRACT('dow' FROM timestamp)   0-6    Sunday=0
+                TO_CHAR(timestamp, 'D')         1-7    Sunday=1
+                */
+                if (7 === $value) {
+                    $value = 1;
+                } else {
+                    $value += 1;
+                }
+
+                return 'EXTRACT(DOW FROM '.$adapter->quoteColumn($column).'::timestamp)='.$adapter->quoteValue((string) ($value - 1));
 
             case 'regex':
                 return $adapter->quoteColumn($column).'~'.$adapter->quoteValue($value);
@@ -71,7 +86,7 @@ class LookupCollection extends BaseLookupCollection
                 if (is_bool($value)) {
                     $value = (int)$value;
                 }
-                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.$value.'%');
+                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.(string)$value.'%');
 
             case 'icontains':
                 if (is_bool($value)) {

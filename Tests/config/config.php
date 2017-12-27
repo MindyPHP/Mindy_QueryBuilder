@@ -11,18 +11,26 @@ declare(strict_types=1);
 
 return [
     'mysql' => [
-        'url' => 'mysql://root@127.0.0.1/test?charset=utf8',
+        'dbname' => 'test',
+        'user' => 'root',
+        'password' => '',
+        'host' => 'localhost',
         'driver' => 'pdo_mysql',
         'fixture' => __DIR__.'/../fixtures/mysql.sql',
     ],
     'pgsql' => [
-        'dsn' => 'pgsql://root@localhost:5432/test',
+        'dbname' => 'test',
+        'user' => 'test',
+        'password' => '',
+        'host' => 'localhost',
         'driver' => 'pdo_pgsql',
         'fixture' => __DIR__.'/../fixtures/pgsql.sql',
     ],
     'sqlite' => [
-        'url' => 'sqlite:///:memory:',
+        'memory' => true,
+//        'path' => __DIR__ . '/sqlite.db',
         'driver' => 'pdo_sqlite',
+        'driverClass' => 'Mindy\QueryBuilder\Driver\SqliteDriver',
         'fixture' => __DIR__.'/../fixtures/sqlite.sql',
     ],
 ];

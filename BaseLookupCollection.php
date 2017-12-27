@@ -117,15 +117,27 @@ class BaseLookupCollection implements ILookupCollection
                 return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8').'%');
 
             case 'startswith':
-                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue($value.'%');
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue((string)$value.'%');
 
             case 'istartswith':
-                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue(mb_strtolower($value, 'UTF-8').'%');
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue(mb_strtolower((string)$value, 'UTF-8').'%');
 
             case 'endswith':
-                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.$value);
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
+                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.(string)$value);
 
             case 'iendswith':
+                if (is_bool($value)) {
+                    $value = (int)$value;
+                }
                 return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8'));
 
             case 'in':
