@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,12 +12,12 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Database\Sqlite;
 
 use Exception;
+use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseAdapter;
 use Mindy\QueryBuilder\Exception\NotSupportedException;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
-use Mindy\QueryBuilder\Interfaces\ISQLGenerator;
+use Mindy\QueryBuilder\SQLGeneratorInterface;
 
-class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
+class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInterface
 {
     /**
      * Quotes a table name for use in a query.
@@ -239,33 +239,6 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
     public function getDate($value = null)
     {
         return $this->formatDateTime($value, 'Y-m-d');
-    }
-
-    /**
-     * @param $limit
-     * @param null $offset
-     *
-     * @return mixed
-     */
-    public function sqlLimitOffset($limit = null, $offset = null)
-    {
-        if ($this->hasLimit($limit)) {
-            $sql = 'LIMIT '.$limit;
-            if ($this->hasOffset($offset)) {
-                $sql .= ' OFFSET '.$offset;
-            }
-
-            return ' '.$sql;
-        } elseif ($this->hasOffset($offset)) {
-            // limit is not optional in SQLite
-            // http://www.sqlite.org/syntaxdiagrams.html#select-stmt
-            // If the LIMIT expression evaluates to a negative value, then there
-            // is no upper bound on the number of rows returned.
-            // -1 or 9223372036854775807 2^63-1
-            return ' LIMIT 9223372036854775807 OFFSET '.$offset; // 2^63-1
-        }
-
-        return '';
     }
 
     /**

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Mysql;
 
+use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseLookupCollection;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
 
 class LookupCollection extends BaseLookupCollection
 {
@@ -30,27 +30,29 @@ class LookupCollection extends BaseLookupCollection
     }
 
     /**
-     * @param IAdapter $adapter
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
      *
      * @return string
      */
-    public function process(IAdapter $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $column, $value)
     {
         switch ($lookup) {
             case 'regex':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'BINARY '.$adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue((string)$value);
+
+                return 'BINARY '.$adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue((string) $value);
 
             case 'iregex':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return $adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue((string)$value);
+
+                return $adapter->quoteColumn($column).' REGEXP '.$adapter->quoteValue((string) $value);
 
             case 'second':
                 return 'EXTRACT(SECOND FROM '.$adapter->quoteColumn($column).')='.$adapter->quoteValue((string) $value);

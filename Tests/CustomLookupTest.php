@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,10 +12,10 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Tests;
 
 use Exception;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
-use Mindy\QueryBuilder\Interfaces\ILookupCollection;
+use Mindy\QueryBuilder\AdapterInterface;
+use Mindy\QueryBuilder\LookupCollectionInterface;
 
-class LookupLibrary implements ILookupCollection
+class LookupLibrary implements LookupCollectionInterface
 {
     /**
      * @param $lookup
@@ -28,7 +28,7 @@ class LookupLibrary implements ILookupCollection
     }
 
     /**
-     * @param IAdapter $adapter
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
@@ -37,7 +37,7 @@ class LookupLibrary implements ILookupCollection
      *
      * @return string
      */
-    public function process(IAdapter $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $column, $value)
     {
         switch ($lookup) {
             case 'foo':

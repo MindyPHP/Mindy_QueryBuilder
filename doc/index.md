@@ -29,7 +29,7 @@ echo $qb->toSQL();
 
 ```php
 $lookups = [
-	'foo' => function (IAdapter $adapter, $column, $value) {
+	'foo' => function (AdapterInterface $adapter, $column, $value) {
 		return $adapter->quoteColumn($column) . ' ??? ' . $adapter->quoteValue($value);
 	}
 ];

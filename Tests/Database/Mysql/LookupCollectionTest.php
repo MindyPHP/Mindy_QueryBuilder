@@ -1,16 +1,20 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: maxim
- * Date: 26/12/2017
- * Time: 16:02
+
+declare(strict_types=1);
+
+/*
+ * Studio 107 (c) 2018 Maxim Falaleev
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\Tests;
+namespace Mindy\QueryBuilder\Tests\Database\Mysql;
 
 use Mindy\QueryBuilder\Database\Mysql\LookupCollection;
+use Mindy\QueryBuilder\Tests\BaseTest;
 
-class MysqlLookupCollectionTest extends BaseTest
+class LookupCollectionTest extends BaseTest
 {
     protected $driver = 'mysql';
 
@@ -22,10 +26,10 @@ class MysqlLookupCollectionTest extends BaseTest
             ['lte', 'name', new \DateTime(), sprintf("`name`<='%s'", date('Y-m-d H:i:s'))],
             ['lt', 'name', new \DateTime(), sprintf("`name`<'%s'", date('Y-m-d H:i:s'))],
             ['gt', 'name', new \DateTime(), sprintf("`name`>'%s'", date('Y-m-d H:i:s'))],
-            ['range', 'name', [1, 2], "`name` BETWEEN 1 AND 2"],
-            ['isnt', 'name', null, "`name` IS NOT NULL"],
-            ['in', 'name', [1, 2], "`name` IN (1, 2)"],
-            ['in', 'name', 1, "`name` IN (1)"],
+            ['range', 'name', [1, 2], '`name` BETWEEN 1 AND 2'],
+            ['isnt', 'name', null, '`name` IS NOT NULL'],
+            ['in', 'name', [1, 2], '`name` IN (1, 2)'],
+            ['in', 'name', 1, '`name` IN (1)'],
             ['unknown', 'name', 1, null],
             ['contains', 'name', true, "`name` LIKE '%1%'"],
             ['icontains', 'name', 'foo', "LOWER(`name`) LIKE '%foo%'"],

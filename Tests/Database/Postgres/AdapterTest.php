@@ -1,17 +1,21 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: maxim
- * Date: 26/12/2017
- * Time: 16:16
+
+declare(strict_types=1);
+
+/*
+ * Studio 107 (c) 2018 Maxim Falaleev
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\Tests;
+namespace Mindy\QueryBuilder\Tests\Database\Postgres;
 
 use Doctrine\DBAL\Schema\Table;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
+use Mindy\QueryBuilder\AdapterInterface;
+use Mindy\QueryBuilder\Tests\BaseTest;
 
-class PgsqlAdapterTest extends BaseTest
+class AdapterTest extends BaseTest
 {
     /**
      * @var string
@@ -21,7 +25,7 @@ class PgsqlAdapterTest extends BaseTest
     public function testAdapter()
     {
         $adapter = $this->getAdapter();
-        $this->assertInstanceOf(IAdapter::class, $adapter);
+        $this->assertInstanceOf(AdapterInterface::class, $adapter);
         $this->assertSame(1, $adapter->prepareValue(1));
         $this->assertSame('1', $adapter->prepareValue('1'));
         $this->assertSame(true, $adapter->prepareValue(true));
@@ -38,15 +42,15 @@ class PgsqlAdapterTest extends BaseTest
 
         $this->assertSame('ALTER TABLE "foo" ALTER COLUMN "bar" TYPE varchar(100)', $adapter->sqlAlterColumn('foo', 'bar', 'varchar(100)'));
 
-        $this->assertSame(' LIMIT ALL OFFSET 10', $adapter->sqlLimitOffset(null, 10));
-        $this->assertSame(' LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
+        $this->assertSame('OFFSET 10', $adapter->sqlLimitOffset(null, 10));
+        $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
 
-        $this->assertSame('TRUNCATE TABLE "foo"', $adapter->sqlTruncateTable("foo", false));
-        $this->assertSame('TRUNCATE TABLE "foo" CASCADE', $adapter->sqlTruncateTable("foo", true));
+        $this->assertSame('TRUNCATE TABLE "foo"', $adapter->sqlTruncateTable('foo', false));
+        $this->assertSame('TRUNCATE TABLE "foo" CASCADE', $adapter->sqlTruncateTable('foo', true));
 
-        $this->assertSame('DROP TABLE "foo"', $adapter->sqlDropTable("foo", false, false));
-        $this->assertSame('DROP TABLE IF EXISTS "foo" CASCADE', $adapter->sqlDropTable("foo", true, true));
-        $this->assertSame('DROP TABLE "foo" CASCADE', $adapter->sqlDropTable("foo", false, true));
+        $this->assertSame('DROP TABLE "foo"', $adapter->sqlDropTable('foo', false, false));
+        $this->assertSame('DROP TABLE IF EXISTS "foo" CASCADE', $adapter->sqlDropTable('foo', true, true));
+        $this->assertSame('DROP TABLE "foo" CASCADE', $adapter->sqlDropTable('foo', false, true));
 
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
         $this->assertSame('ALTER TABLE "foo" ADD "bar" VARCHAR(255)', $adapter->sqlAddColumn('foo', 'bar', 'VARCHAR(255)'));
@@ -65,7 +69,6 @@ class PgsqlAdapterTest extends BaseTest
         $this->assertSame('ALTER TABLE "bar"."foo" DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(false, 'foo', 'bar'));
         $this->assertSame('ALTER TABLE "bar"."foo" DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(0, 'foo', 'bar'));
         $this->assertSame('ALTER TABLE "bar"."foo" DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity('', 'foo', 'bar'));
-
     }
 
     public function testRenameColumn()

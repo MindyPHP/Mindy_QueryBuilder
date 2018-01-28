@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,25 +11,30 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder;
 
+use Doctrine\DBAL\Connection;
 use Mindy\QueryBuilder\Aggregation\Aggregation;
-use Mindy\QueryBuilder\Interfaces\ILookupCollection;
-use Mindy\QueryBuilder\Interfaces\ISQLGenerator;
 use Mindy\QueryBuilder\Q\Q;
+use Mindy\QueryBuilder\Utils\TableNameResolver;
 
-abstract class BaseAdapter implements ISQLGenerator
+abstract class BaseAdapter implements SQLGeneratorInterface
 {
     /**
      * @var string
      */
     protected $tablePrefix = '';
     /**
-     * @var null|\PDO
+     * @var Connection
      */
-    protected $driver = null;
+    protected $connection;
 
-    public function __construct($driver = null)
+    /**
+     * BaseAdapter constructor.
+     *
+     * @param Connection $connection
+     */
+    public function __construct(Connection $connection)
     {
-        $this->driver = $driver;
+        $this->connection = $connection;
     }
 
     /**
@@ -41,7 +46,7 @@ abstract class BaseAdapter implements ISQLGenerator
     }
 
     /**
-     * @return BaseLookupCollection|ILookupCollection
+     * @return BaseLookupCollection|LookupCollectionInterface
      */
     abstract public function getLookupCollection();
 
@@ -87,60 +92,25 @@ abstract class BaseAdapter implements ISQLGenerator
     }
 
     /**
-     * Returns the actual name of a given table name.
-     * This method will strip off curly brackets from the given table name
-     * and replace the percentage character '%' with [[Connection::tablePrefix]].
+     * @param $name
      *
-     * @param string $name the table name to be converted
-     *
-     * @return string the real name of the given table name
+     * @return string
      */
-    public function getRawTableName($name)
+    public function getRawTableName($name): string
     {
-        if (false !== strpos($name, '{{')) {
-            $name = preg_replace('/\\{\\{(.*?)\\}\\}/', '\1', $name);
-
-            return str_replace('%', $this->getTablePrefix(), $name);
-        }
-
-        return $name;
+        return TableNameResolver::getTableName($name, $this->getTablePrefix());
     }
 
     /**
-     * @return null|\PDO
+     * @return Connection
      */
-    public function getDriver()
+    public function getConnection()
     {
-        return $this->driver;
+        return $this->connection;
     }
 
     /**
-     * @param $pdo
-     *
-     * @return $this
-     */
-    public function setDriver($pdo)
-    {
-        $this->driver = $pdo;
-
-        return $this;
-    }
-
-    /**
-     * Quotes a string value for use in a query.
-     * Note that if the parameter is not a string, it will be returned without change.
-     *
-     * Note sqlite3:
-     * A string constant is formed by enclosing the string in single quotes (').
-     * A single quote within the string can be encoded by putting two single
-     * quotes in a row - as in Pascal. C-style escapes using the backslash
-     * character are not supported because they are not standard SQL.
-     *
-     * @param string $str string to be quoted
-     *
-     * @return string the properly quoted string
-     *
-     * @see http://www.php.net/manual/en/function.PDO-quote.php
+     * {@inheritdoc}
      */
     public function quoteValue($str)
     {
@@ -148,7 +118,7 @@ abstract class BaseAdapter implements ISQLGenerator
             return $str;
         }
 
-        return $this->getDriver()->quote($str);
+        return $this->getConnection()->quote($str);
     }
 
     /**
@@ -253,7 +223,14 @@ abstract class BaseAdapter implements ISQLGenerator
      *
      * @return string the LIMIT and OFFSET clauses
      */
-    abstract public function sqlLimitOffset($limit = null, $offset = null);
+    public function sqlLimitOffset($limit = null, $offset = null)
+    {
+        $qb = $this->getConnection()->createQueryBuilder();
+        $qb->setMaxResults($limit);
+        $qb->setFirstResult($offset);
+
+        return trim(str_replace('SELECT', '', $qb->getSQL()));
+    }
 
     /**
      * @param $columns
@@ -879,6 +856,8 @@ abstract class BaseAdapter implements ISQLGenerator
     /**
      * @param array|null|string $columns
      * @param null              $distinct
+     *
+     * @throws \Exception
      *
      * @return string
      */

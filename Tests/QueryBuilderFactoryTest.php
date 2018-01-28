@@ -1,9 +1,12 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: maxim
- * Date: 26/12/2017
- * Time: 17:00
+
+declare(strict_types=1);
+
+/*
+ * Studio 107 (c) 2018 Maxim Falaleev
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Mindy\QueryBuilder\Tests;

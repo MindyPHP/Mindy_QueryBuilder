@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Sqlite;
 
+use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseLookupCollection;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
 
 class LookupCollection extends BaseLookupCollection
 {
@@ -30,14 +30,14 @@ class LookupCollection extends BaseLookupCollection
     }
 
     /**
-     * @param IAdapter $adapter
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
      *
      * @return string
      */
-    public function process(IAdapter $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $column, $value)
     {
         switch ($lookup) {
             case 'regex':
@@ -63,7 +63,7 @@ class LookupCollection extends BaseLookupCollection
 
             case 'month':
                 $value = (int) $value;
-                if (1 == strlen((string)$value)) {
+                if (1 == strlen((string) $value)) {
                     $value = '0'.(string) $value;
                 }
 
@@ -78,7 +78,7 @@ class LookupCollection extends BaseLookupCollection
                 /*
                  * %w - day of week 0-6 with Sunday==0
                  */
-                if ($value === 7) {
+                if (7 === $value) {
                     $value = 1;
                 } else {
                     $value += 1;
