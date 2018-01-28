@@ -1,17 +1,20 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: maxim
- * Date: 26/12/2017
- * Time: 16:16
+
+declare(strict_types=1);
+
+/*
+ * Studio 107 (c) 2018 Maxim Falaleev
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\Tests;
+namespace Mindy\QueryBuilder\Tests\Database\Sqlite;
 
-use Doctrine\DBAL\Schema\Table;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
+use Mindy\QueryBuilder\AdapterInterface;
+use Mindy\QueryBuilder\Tests\BaseTest;
 
-class SqliteAdapterTest extends BaseTest
+class AdapterTest extends BaseTest
 {
     /**
      * @var string
@@ -21,7 +24,7 @@ class SqliteAdapterTest extends BaseTest
     public function testAdapter()
     {
         $adapter = $this->getAdapter();
-        $this->assertInstanceOf(IAdapter::class, $adapter);
+        $this->assertInstanceOf(AdapterInterface::class, $adapter);
         $this->assertSame(1, $adapter->prepareValue(1));
         $this->assertSame('1', $adapter->prepareValue('1'));
         $this->assertSame(1, $adapter->prepareValue(true));
@@ -30,8 +33,8 @@ class SqliteAdapterTest extends BaseTest
         $this->assertSame(date('Y-m-d'), $adapter->getDate(new \DateTime()));
         $this->assertSame(date('Y-m-d'), $adapter->getDate());
 
-        $this->assertSame(' LIMIT 9223372036854775807 OFFSET 10', $adapter->sqlLimitOffset(null, 10));
-        $this->assertSame(' LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
+        $this->assertSame('LIMIT -1 OFFSET 10', $adapter->sqlLimitOffset(null, 10));
+        $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
 
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
         $this->assertSame('ALTER TABLE `foo` ADD COLUMN `bar` VARCHAR(255)', $adapter->sqlAddColumn('foo', 'bar', 'VARCHAR(255)'));

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,12 +12,12 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Tests;
 
 use Exception;
-use Mindy\QueryBuilder\Interfaces\ILookupBuilder;
+use Mindy\QueryBuilder\LookupBuilderInterface;
 use Mindy\QueryBuilder\QueryBuilder;
 
 class CallbackTestCallback
 {
-    public function run(QueryBuilder $qb, ILookupBuilder $lookupBuilder, array $lookupNodes, $value)
+    public function run(QueryBuilder $qb, LookupBuilderInterface $lookupBuilder, array $lookupNodes, $value)
     {
         $column = '?';
         $lookup = '?';
@@ -45,7 +45,7 @@ class CallbackTestCallback
 
 class CallbackTestTwoCallback
 {
-    public function run(QueryBuilder $qb, ILookupBuilder $lookupBuilder, array $lookupNodes, $value)
+    public function run(QueryBuilder $qb, LookupBuilderInterface $lookupBuilder, array $lookupNodes, $value)
     {
         $lookup = $lookupBuilder->getDefault();
         foreach ($lookupNodes as $nodeName) {

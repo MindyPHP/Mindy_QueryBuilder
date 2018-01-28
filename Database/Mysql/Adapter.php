@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,11 +12,11 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Database\Mysql;
 
 use Exception;
+use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseAdapter;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
-use Mindy\QueryBuilder\Interfaces\ISQLGenerator;
+use Mindy\QueryBuilder\SQLGeneratorInterface;
 
-class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
+class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInterface
 {
     /**
      * Quotes a table name for use in a query.
@@ -174,7 +174,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
      */
     public function sqlResetSequence($tableName, $value)
     {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' AUTO_INCREMENT='.(int)$value;
+        return 'ALTER TABLE '.$this->quoteTableName($tableName).' AUTO_INCREMENT='.(int) $value;
     }
 
     /**
@@ -189,25 +189,6 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
         return 'SET FOREIGN_KEY_CHECKS = '.$this->getBoolean($check);
     }
 
-    public function sqlLimitOffset($limit = null, $offset = null)
-    {
-        if ($this->hasLimit($limit)) {
-            $sql = 'LIMIT '.$limit;
-            if ($this->hasOffset($offset)) {
-                $sql .= ' OFFSET '.$offset;
-            }
-
-            return ' '.$sql;
-        } elseif ($this->hasOffset($offset)) {
-            // limit is not optional in MySQL
-            // http://stackoverflow.com/a/271650/1106908
-            // http://dev.mysql.com/doc/refman/5.0/en/select.html#idm47619502796240
-            return ' LIMIT '.$offset.', 18446744073709551615'; // 2^64-1
-        }
-
-        return '';
-    }
-
     /**
      * @param $tableName
      * @param $oldName
@@ -220,7 +201,7 @@ class Adapter extends BaseAdapter implements IAdapter, ISQLGenerator
     public function sqlRenameColumn($tableName, $oldName, $newName)
     {
         $quotedTable = $this->quoteTableName($tableName);
-        $row = $this->driver->query('SHOW CREATE TABLE '.$quotedTable)->fetch();
+        $row = $this->connection->query('SHOW CREATE TABLE '.$quotedTable)->fetch();
         $sql = $row['Create Table'];
 
         if (preg_match_all('/^\s*`(.*?)`\s+(.*?),?$/m', $sql, $matches)) {

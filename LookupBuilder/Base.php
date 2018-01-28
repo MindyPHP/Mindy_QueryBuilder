@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,12 +12,12 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\LookupBuilder;
 
 use Exception;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
-use Mindy\QueryBuilder\Interfaces\ILookupBuilder;
-use Mindy\QueryBuilder\Interfaces\ILookupCollection;
+use Mindy\QueryBuilder\AdapterInterface;
+use Mindy\QueryBuilder\LookupBuilderInterface;
+use Mindy\QueryBuilder\LookupCollectionInterface;
 use Mindy\QueryBuilder\QueryBuilder;
 
-abstract class Base implements ILookupBuilder
+abstract class Base implements LookupBuilderInterface
 {
     /**
      * @var string
@@ -40,7 +40,7 @@ abstract class Base implements ILookupBuilder
      */
     protected $fetchColumnCallback = null;
     /**
-     * @var ILookupCollection[]
+     * @var LookupCollectionInterface[]
      */
     private $_lookupCollections = [];
 
@@ -54,11 +54,11 @@ abstract class Base implements ILookupBuilder
     }
 
     /**
-     * @param ILookupCollection $lookupCollection
+     * @param LookupCollectionInterface $lookupCollection
      *
      * @return $this
      */
-    public function addLookupCollection(ILookupCollection $lookupCollection)
+    public function addLookupCollection(LookupCollectionInterface $lookupCollection)
     {
         $this->_lookupCollections[] = $lookupCollection;
 
@@ -160,6 +160,7 @@ abstract class Base implements ILookupBuilder
     }
 
     /**
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
@@ -170,7 +171,7 @@ abstract class Base implements ILookupBuilder
      *
      * @exception \Exception
      */
-    public function runLookup(IAdapter $adapter, $lookup, $column, $value)
+    public function runLookup(AdapterInterface $adapter, $lookup, $column, $value)
     {
         foreach ($this->_lookupCollections as $collection) {
             if ($collection->has($lookup)) {
@@ -180,5 +181,11 @@ abstract class Base implements ILookupBuilder
         throw new Exception('Unknown lookup: '.$lookup.', column: '.$column.', value: '.(is_array($value) ? print_r($value, true) : $value));
     }
 
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param array        $where
+     *
+     * @return mixed
+     */
     abstract public function parse(QueryBuilder $queryBuilder, array $where);
 }

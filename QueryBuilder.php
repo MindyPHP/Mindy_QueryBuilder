@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -17,9 +17,6 @@ use Mindy\QueryBuilder\Aggregation\Aggregation;
 use Mindy\QueryBuilder\Database\Mysql\Adapter as MysqlAdapter;
 use Mindy\QueryBuilder\Database\Pgsql\Adapter as PgsqlAdapter;
 use Mindy\QueryBuilder\Database\Sqlite\Adapter as SqliteAdapter;
-use Mindy\QueryBuilder\Interfaces\ILookupBuilder;
-use Mindy\QueryBuilder\Interfaces\ILookupCollection;
-use Mindy\QueryBuilder\Interfaces\ISQLGenerator;
 use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Q\QAnd;
@@ -101,7 +98,7 @@ class QueryBuilder
      */
     protected $adapter;
     /**
-     * @var ILookupBuilder
+     * @var LookupBuilderInterface
      */
     protected $lookupBuilder;
     /**
@@ -166,11 +163,11 @@ class QueryBuilder
     /**
      * QueryBuilder constructor.
      *
-     * @param Connection     $connection
-     * @param BaseAdapter    $adapter
-     * @param ILookupBuilder $lookupBuilder
+     * @param Connection             $connection
+     * @param BaseAdapter            $adapter
+     * @param LookupBuilderInterface $lookupBuilder
      */
-    public function __construct(Connection $connection, BaseAdapter $adapter, ILookupBuilder $lookupBuilder)
+    public function __construct(Connection $connection, BaseAdapter $adapter, LookupBuilderInterface $lookupBuilder)
     {
         $this->connection = $connection;
         $this->adapter = $adapter;
@@ -178,11 +175,11 @@ class QueryBuilder
     }
 
     /**
-     * @param ILookupCollection $lookupCollection
+     * @param LookupCollectionInterface $lookupCollection
      *
      * @return $this
      */
-    public function addLookupCollection(ILookupCollection $lookupCollection)
+    public function addLookupCollection(LookupCollectionInterface $lookupCollection)
     {
         $this->lookupBuilder->addLookupCollection($lookupCollection);
 
@@ -391,7 +388,7 @@ class QueryBuilder
     }
 
     /**
-     * @return ILookupBuilder|\Mindy\QueryBuilder\LookupBuilder\LookupBuilder
+     * @return LookupBuilderInterface|\Mindy\QueryBuilder\LookupBuilder\LookupBuilder
      */
     public function getLookupBuilder()
     {
@@ -399,7 +396,7 @@ class QueryBuilder
     }
 
     /**
-     * @return BaseAdapter|ISQLGenerator
+     * @return BaseAdapter|SQLGeneratorInterface
      */
     public function getAdapter()
     {
@@ -778,7 +775,7 @@ class QueryBuilder
             '{order}' => empty($union) ? $order : '',
             '{having}' => $having,
             '{join}' => $join,
-            '{limit_offset}' => $limitOffset,
+            '{limit_offset}' => $limitOffset ? ' ' . $limitOffset : '',
             '{union}' => empty($union) ? '' : $union.$order,
         ]);
     }

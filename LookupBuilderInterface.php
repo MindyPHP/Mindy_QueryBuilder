@@ -3,20 +3,18 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\Interfaces;
-
-use Mindy\QueryBuilder\QueryBuilder;
+namespace Mindy\QueryBuilder;
 
 /**
- * Interface ILookupBuilder.
+ * Interface LookupBuilderInterface.
  */
-interface ILookupBuilder
+interface LookupBuilderInterface
 {
     /**
      * @param $lookup
@@ -41,19 +39,19 @@ interface ILookupBuilder
     public function setCallback($callback);
 
     /**
-     * @param ILookupCollection $lookupCollection
+     * @param LookupCollectionInterface $lookupCollection
      *
      * @return $this
      */
-    public function addLookupCollection(ILookupCollection $lookupCollection);
+    public function addLookupCollection(LookupCollectionInterface $lookupCollection);
 
     /**
-     * @param IAdapter $adapter
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
      *
      * @return mixed
      */
-    public function runLookup(IAdapter $adapter, $lookup, $column, $value);
+    public function runLookup(AdapterInterface $adapter, $lookup, $column, $value);
 }

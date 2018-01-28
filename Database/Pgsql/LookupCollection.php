@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Pgsql;
 
+use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseLookupCollection;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
 
 class LookupCollection extends BaseLookupCollection
 {
@@ -30,14 +30,14 @@ class LookupCollection extends BaseLookupCollection
     }
 
     /**
-     * @param IAdapter $adapter
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
      *
      * @return string
      */
-    public function process(IAdapter $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $column, $value)
     {
         switch ($lookup) {
             case 'second':
@@ -84,39 +84,45 @@ class LookupCollection extends BaseLookupCollection
 
             case 'contains':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.(string)$value.'%');
+
+                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.(string) $value.'%');
 
             case 'icontains':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8').'%');
+
+                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string) $value, 'UTF-8').'%');
 
             case 'startswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue((string)$value.'%');
+
+                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue((string) $value.'%');
 
             case 'istartswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue(mb_strtolower((string)$value, 'UTF-8').'%');
+
+                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue(mb_strtolower((string) $value, 'UTF-8').'%');
 
             case 'endswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.(string)$value);
+
+                return $adapter->quoteColumn($column).'::text LIKE '.$adapter->quoteValue('%'.(string) $value);
 
             case 'iendswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8'));
+
+                return 'LOWER('.$adapter->quoteColumn($column).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string) $value, 'UTF-8'));
         }
 
         return parent::process($adapter, $lookup, $column, $value);

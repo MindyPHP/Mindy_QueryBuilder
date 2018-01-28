@@ -1,16 +1,20 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: maxim
- * Date: 26/12/2017
- * Time: 16:02
+
+declare(strict_types=1);
+
+/*
+ * Studio 107 (c) 2018 Maxim Falaleev
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\Tests;
+namespace Mindy\QueryBuilder\Tests\Database\Postgres;
 
 use Mindy\QueryBuilder\Database\Pgsql\LookupCollection;
+use Mindy\QueryBuilder\Tests\BaseTest;
 
-class PgsqlLookupCollectionTest extends BaseTest
+class LookupCollectionTest extends BaseTest
 {
     protected $driver = 'pgsql';
 
@@ -32,11 +36,11 @@ class PgsqlLookupCollectionTest extends BaseTest
             ['icontains', 'name', 1, "LOWER(\"name\"::text) LIKE '%1%'"],
             ['icontains', 'name', true, "LOWER(\"name\"::text) LIKE '%1%'"],
             ['regex', 'name', 'foo', "\"name\"~'foo'"],
-            ['regex', 'name', 1, "\"name\"~1"],
-            ['regex', 'name', true, "\"name\"~TRUE"],
+            ['regex', 'name', 1, '"name"~1'],
+            ['regex', 'name', true, '"name"~TRUE'],
             ['iregex', 'name', 'foo', "\"name\"~*'foo'"],
-            ['iregex', 'name', 1, "\"name\"~*1"],
-            ['iregex', 'name', true, "\"name\"~*TRUE"],
+            ['iregex', 'name', 1, '"name"~*1'],
+            ['iregex', 'name', true, '"name"~*TRUE'],
             ['second', 'name', 1, "EXTRACT(SECOND FROM \"name\"::timestamp)='1'"],
             ['minute', 'name', 1, "EXTRACT(MINUTE FROM \"name\"::timestamp)='1'"],
             ['hour', 'name', 1, "EXTRACT(HOUR FROM \"name\"::timestamp)='1'"],

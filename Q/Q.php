@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Q;
 
 use Exception;
+use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\Expression;
-use Mindy\QueryBuilder\Interfaces\IAdapter;
-use Mindy\QueryBuilder\Interfaces\ILookupBuilder;
+use Mindy\QueryBuilder\LookupBuilderInterface;
 use Mindy\QueryBuilder\QueryBuilder;
 
 abstract class Q
@@ -28,11 +28,11 @@ abstract class Q
      */
     protected $operator;
     /**
-     * @var ILookupBuilder
+     * @var LookupBuilderInterface
      */
     protected $lookupBuilder;
     /**
-     * @var IAdapter
+     * @var AdapterInterface
      */
     protected $adapter;
     /**
@@ -50,14 +50,14 @@ abstract class Q
         $this->_tableAlias = $tableAlias;
     }
 
-    public function setLookupBuilder(ILookupBuilder $lookupBuilder)
+    public function setLookupBuilder(LookupBuilderInterface $lookupBuilder)
     {
         $this->lookupBuilder = $lookupBuilder;
 
         return $this;
     }
 
-    public function setAdapter(IAdapter $adapter)
+    public function setAdapter(AdapterInterface $adapter)
     {
         $this->adapter = $adapter;
 

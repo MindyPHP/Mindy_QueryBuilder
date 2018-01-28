@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,10 +11,7 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder;
 
-use Mindy\QueryBuilder\Interfaces\IAdapter;
-use Mindy\QueryBuilder\Interfaces\ILookupCollection;
-
-class BaseLookupCollection implements ILookupCollection
+class BaseLookupCollection implements LookupCollectionInterface
 {
     /**
      * @param $lookup
@@ -32,14 +29,14 @@ class BaseLookupCollection implements ILookupCollection
     }
 
     /**
-     * @param IAdapter $adapter
+     * @param AdapterInterface $adapter
      * @param $lookup
      * @param $column
      * @param $value
      *
      * @return string
      */
-    public function process(IAdapter $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $column, $value)
     {
         switch ($lookup) {
             case 'exact':
@@ -52,7 +49,7 @@ class BaseLookupCollection implements ILookupCollection
                     $sqlValue = $value->toSQL();
                 } elseif ($value instanceof QueryBuilder) {
                     $sqlValue = '('.$value->toSQL().')';
-                } elseif (false !== strpos((string)$value, 'SELECT')) {
+                } elseif (false !== strpos((string) $value, 'SELECT')) {
                     $sqlValue = '('.$value.')';
                 } else {
                     $sqlValue = $adapter->quoteValue($value);
@@ -106,39 +103,45 @@ class BaseLookupCollection implements ILookupCollection
 
             case 'contains':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
+
                 return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.$value.'%');
 
             case 'icontains':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8').'%');
+
+                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string) $value, 'UTF-8').'%');
 
             case 'startswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue((string)$value.'%');
+
+                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue((string) $value.'%');
 
             case 'istartswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue(mb_strtolower((string)$value, 'UTF-8').'%');
+
+                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue(mb_strtolower((string) $value, 'UTF-8').'%');
 
             case 'endswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.(string)$value);
+
+                return $adapter->quoteColumn($column).' LIKE '.$adapter->quoteValue('%'.(string) $value);
 
             case 'iendswith':
                 if (is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
-                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string)$value, 'UTF-8'));
+
+                return 'LOWER('.$adapter->quoteColumn($column).') LIKE '.$adapter->quoteValue('%'.mb_strtolower((string) $value, 'UTF-8'));
 
             case 'in':
                 if (is_array($value)) {

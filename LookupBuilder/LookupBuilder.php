@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Studio 107 (c) 2017 Maxim Falaleev
+ * Studio 107 (c) 2018 Maxim Falaleev
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,6 +16,15 @@ use Mindy\QueryBuilder\QueryBuilder;
 
 class LookupBuilder extends Base
 {
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param $rawLookup
+     * @param $value
+     *
+     * @throws Exception
+     *
+     * @return array|void
+     */
     public function parseLookup(QueryBuilder $queryBuilder, $rawLookup, $value)
     {
         if (substr_count($rawLookup, $this->separator) > 1) {
@@ -45,6 +54,12 @@ class LookupBuilder extends Base
         return $this->runCallback($queryBuilder, $lookupNodes, $value);
     }
 
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param $lookup
+     *
+     * @return bool|void
+     */
     public function buildJoin(QueryBuilder $queryBuilder, $lookup)
     {
         if (substr_count($lookup, $this->getSeparator()) > 0) {
@@ -54,7 +69,15 @@ class LookupBuilder extends Base
         return false;
     }
 
-    public function parse(QueryBuilder $queryBuilder, array $where)
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param array        $where
+     *
+     * @throws Exception
+     *
+     * @return array
+     */
+    public function parse(QueryBuilder $queryBuilder, array $where): array
     {
         $conditions = [];
         foreach ($where as $lookup => $value) {
