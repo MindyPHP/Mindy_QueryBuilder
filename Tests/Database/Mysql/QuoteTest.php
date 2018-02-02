@@ -29,7 +29,7 @@ class QuoteTest extends BaseTest
 
     protected function getAdapter()
     {
-        return new Adapter($this->getConnection());
+        return new Adapter($this->connection);
     }
 
     public function testQuoteValue()

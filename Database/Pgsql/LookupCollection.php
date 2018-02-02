@@ -20,7 +20,7 @@ class LookupCollection extends BaseLookupCollection
     {
         $lookups = [
             'regex', 'iregex', 'second', 'year', 'minute',
-            'hour', 'day', 'month', 'week_day',
+            'hour', 'day', 'month', 'week_day', 'json',
         ];
         if (in_array($lookup, $lookups)) {
             return true;

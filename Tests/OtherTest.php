@@ -15,7 +15,7 @@ class OtherTest extends BaseTest
 {
     public function testConvertToDbValue()
     {
-        $platform = $this->getConnection()->getDatabasePlatform();
+        $platform = $this->connection->getDatabasePlatform();
         $this->assertSame(1, $platform->convertBooleansToDatabaseValue(true));
 
         $a = $this->getAdapter();

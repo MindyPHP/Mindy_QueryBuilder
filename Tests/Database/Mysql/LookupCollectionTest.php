@@ -51,6 +51,22 @@ class LookupCollectionTest extends BaseTest
             ['week_day', 'name', 1, "DAYOFWEEK(`name`)='2'"],
             // Sunday
             ['week_day', 'name', 7, "DAYOFWEEK(`name`)='1'"],
+
+            ['json', 'attributes', ['name.foo.bar' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name.foo.bar')='bar'"],
+            ['json', 'attributes', ['name' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name')='bar'"],
+            ['json', 'attributes', ['name__contains' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name') LIKE '%bar%'"],
+            ['json', 'attributes', ['name__icontains' => 'BAR'], "LOWER(JSON_EXTRACT(`attributes`, '$.name')) LIKE '%bar%'"],
+            ['json', 'attributes', ['name__gte' => 1], "JSON_EXTRACT(`attributes`, '$.name') >= 1"],
+            ['json', 'attributes', ['name__gt' => 1], "JSON_EXTRACT(`attributes`, '$.name') > 1"],
+            ['json', 'attributes', ['name__lte' => 1], "JSON_EXTRACT(`attributes`, '$.name') <= 1"],
+            ['json', 'attributes', ['name__lt' => 1], "JSON_EXTRACT(`attributes`, '$.name') < 1"],
+            ['json', 'attributes', ['name__startswith' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name') LIKE 'bar%'"],
+            ['json', 'attributes', ['name__istartswith' => 'bar'], "LOWER(JSON_EXTRACT(`attributes`, '$.name')) LIKE 'bar%'"],
+            ['json', 'attributes', ['name__endswith' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name') LIKE '%bar'"],
+            ['json', 'attributes', ['name__iendswith' => 'bar'], "LOWER(JSON_EXTRACT(`attributes`, '$.name')) LIKE '%bar'"],
+            ['json', 'attributes', ['name__in' => [1,2,3]], "JSON_EXTRACT(`attributes`, '$.name') IN (1, 2, 3)"],
+            ['json', 'attributes', ['name__range' => [1,2]], "JSON_EXTRACT(`attributes`, '$.name') BETWEEN 1 AND 2"],
+            ['json', 'attributes', ['name__isnull' => false], "JSON_EXTRACT(`attributes`, '$.name') IS NOT NULL"],
         ];
     }
 

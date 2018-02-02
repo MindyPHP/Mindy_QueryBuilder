@@ -15,7 +15,7 @@ class DbalTest extends BaseTest
 {
     public function testSimple()
     {
-        $qb = $this->getConnection()->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
         $where = $expr->andX($expr->orX(
             $expr->eq('u.id', '?1'),

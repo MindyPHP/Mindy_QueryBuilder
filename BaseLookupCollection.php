@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder;
 
+use Doctrine\DBAL\Connection;
+
 class BaseLookupCollection implements LookupCollectionInterface
 {
     /**
@@ -96,7 +98,7 @@ class BaseLookupCollection implements LookupCollectionInterface
                     return $adapter->quoteColumn($column).' IS NOT '.$adapter->getSqlType($value);
                 }
 
-                    return $adapter->quoteColumn($column).'!='.$adapter->quoteValue($value);
+                return $adapter->quoteColumn($column).'!='.$adapter->quoteValue($value);
 
             case 'isnull':
                 return $adapter->quoteColumn($column).' '.((bool) $value ? 'IS NULL' : 'IS NOT NULL');
