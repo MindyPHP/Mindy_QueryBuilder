@@ -104,14 +104,4 @@ class Adapter extends BaseAdapter implements AdapterInterface
     {
         return false !== strpos($name, '"') ? $name : '"'.$name.'"';
     }
-
-    /**
-     * @param $value
-     *
-     * @return string
-     */
-    public function getBoolean($value = null)
-    {
-        return (bool) $value ? 'TRUE' : 'FALSE';
-    }
 }

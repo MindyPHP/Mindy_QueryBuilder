@@ -34,8 +34,8 @@ class AdapterTest extends BaseTest
         $this->assertSame(date('Y-m-d'), $adapter->getDate(new \DateTime()));
         $this->assertSame(date('Y-m-d'), $adapter->getDate());
 
-        $this->assertSame('TRUE', $adapter->getBoolean(1));
-        $this->assertSame('FALSE', $adapter->getBoolean(0));
+        $this->assertSame('true', $adapter->getBoolean(1));
+        $this->assertSame('false', $adapter->getBoolean(0));
 
         $this->assertSame('FALSE', $adapter->quoteValue(false));
         $this->assertSame('NULL', $adapter->quoteValue(null));

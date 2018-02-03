@@ -56,20 +56,6 @@ class Adapter extends BaseAdapter
     }
 
     /**
-     * @param $value
-     *
-     * @return string
-     */
-    public function getBoolean($value = null)
-    {
-        if ('boolean' === gettype($value)) {
-            return (int)$value;
-        }
-
-        return $value ? 1 : 0;
-    }
-
-    /**
      * @param $tableName
      * @param $value
      *

@@ -43,6 +43,5 @@ class AdapterTest extends BaseTest
         $this->assertSame('PRAGMA foreign_keys=1', $adapter->sqlCheckIntegrity(1));
         $this->assertSame('PRAGMA foreign_keys=0', $adapter->sqlCheckIntegrity(false));
         $this->assertSame('PRAGMA foreign_keys=0', $adapter->sqlCheckIntegrity(0));
-        $this->assertSame('PRAGMA foreign_keys=0', $adapter->sqlCheckIntegrity(''));
     }
 }

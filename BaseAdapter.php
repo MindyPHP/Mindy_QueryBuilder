@@ -387,7 +387,10 @@ abstract class BaseAdapter implements AdapterInterface
      *
      * @return string
      */
-    abstract public function getBoolean($value = null);
+    public function getBoolean($value = null)
+    {
+        return $this->connection->getDatabasePlatform()->convertBooleans($value);
+    }
 
     public function formatDateTime($value)
     {

@@ -58,16 +58,6 @@ class Adapter extends BaseAdapter
     }
 
     /**
-     * @param $value
-     *
-     * @return string
-     */
-    public function getBoolean($value = null)
-    {
-        return (bool) $value ? 1 : 0;
-    }
-
-    /**
      * @param $sequenceName
      * @param $value
      *

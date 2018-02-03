@@ -54,6 +54,5 @@ class AdapterTest extends BaseTest
         $this->assertSame('SET FOREIGN_KEY_CHECKS = 1', $adapter->sqlCheckIntegrity(1));
         $this->assertSame('SET FOREIGN_KEY_CHECKS = 0', $adapter->sqlCheckIntegrity(false));
         $this->assertSame('SET FOREIGN_KEY_CHECKS = 0', $adapter->sqlCheckIntegrity(0));
-        $this->assertSame('SET FOREIGN_KEY_CHECKS = 0', $adapter->sqlCheckIntegrity(''));
     }
 }
