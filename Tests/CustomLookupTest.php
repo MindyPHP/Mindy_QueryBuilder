@@ -18,11 +18,9 @@ use Mindy\QueryBuilder\LookupCollectionInterface;
 class LookupLibrary implements LookupCollectionInterface
 {
     /**
-     * @param $lookup
-     *
-     * @return bool
+     * {@inheritdoc}
      */
-    public function has($lookup)
+    public function has(string $lookup): bool
     {
         return 'foo' === $lookup;
     }
@@ -30,18 +28,18 @@ class LookupLibrary implements LookupCollectionInterface
     /**
      * @param AdapterInterface $adapter
      * @param $lookup
-     * @param $column
-     * @param $value
+     * @param $x
+     * @param $y
      *
      * @throws Exception
      *
      * @return string
      */
-    public function process(AdapterInterface $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $x, $y)
     {
         switch ($lookup) {
             case 'foo':
-                return $adapter->quoteColumn($column).' ??? '.$adapter->quoteValue($value);
+                return $adapter->quoteColumn($x).' ??? '.$adapter->quoteValue($y);
 
             default:
                 throw new Exception('Unknown lookup: '.$lookup);

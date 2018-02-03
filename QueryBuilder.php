@@ -20,6 +20,7 @@ use Mindy\QueryBuilder\Database\Sqlite\Adapter as SqliteAdapter;
 use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Q\QAnd;
+use Doctrine\DBAL\Query\QueryBuilder as DbalQueryBuilder;
 
 class QueryBuilder
 {
@@ -118,6 +119,11 @@ class QueryBuilder
      */
     protected $connection;
 
+    /**
+     * @var DbalQueryBuilder
+     */
+    protected $queryBuilder;
+
     public function getConnection()
     {
         return $this->connection;
@@ -172,6 +178,7 @@ class QueryBuilder
         $this->connection = $connection;
         $this->adapter = $adapter;
         $this->lookupBuilder = $lookupBuilder;
+        $this->queryBuilder = new DbalQueryBuilder($connection);
     }
 
     /**

@@ -49,8 +49,8 @@ class BuilderTest extends ConnectionAwareTest
             ['name__istartswith', 'FOO', 'LOWER(name) LIKE \'foo%\''],
             ['name__startswith', '1', 'name LIKE \'1%\''],
 
-            ['name__iendswith', 'FOO', 'LOWER(name) LIKE %foo'],
-            ['name__endswith', '1', 'name LIKE %1'],
+            ['name__iendswith', 'FOO', 'LOWER(name) LIKE \'%foo\''],
+            ['name__endswith', '1', 'name LIKE \'%1\''],
 
             ['name__isnull', true, 'name IS NULL'],
             ['name__isnull', false, 'name IS NOT NULL'],

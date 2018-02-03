@@ -49,7 +49,7 @@ class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInter
      */
     public function getLookupCollection()
     {
-        return new LookupCollection();
+        return new ExpressionBuilder();
     }
 
     public function getRandomOrder()

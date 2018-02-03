@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Tests\Database\Mysql;
 
-use Mindy\QueryBuilder\Database\Mysql\LookupCollection;
+use Mindy\QueryBuilder\Database\Mysql\ExpressionBuilder;
 use Mindy\QueryBuilder\Tests\BaseTest;
 
 class LookupCollectionTest extends BaseTest
@@ -21,16 +21,15 @@ class LookupCollectionTest extends BaseTest
     public function providerLookups()
     {
         return [
-            ['exact', 'name', new \DateTime(), sprintf("`name`='%s'", date('Y-m-d H:i:s'))],
-            ['gte', 'name', new \DateTime(), sprintf("`name`>='%s'", date('Y-m-d H:i:s'))],
-            ['lte', 'name', new \DateTime(), sprintf("`name`<='%s'", date('Y-m-d H:i:s'))],
-            ['lt', 'name', new \DateTime(), sprintf("`name`<'%s'", date('Y-m-d H:i:s'))],
-            ['gt', 'name', new \DateTime(), sprintf("`name`>'%s'", date('Y-m-d H:i:s'))],
+            ['exact', 'name', new \DateTime(), sprintf("`name` = '%s'", date('Y-m-d H:i:s'))],
+            ['gte', 'name', new \DateTime(), sprintf("`name` >= '%s'", date('Y-m-d H:i:s'))],
+            ['lte', 'name', new \DateTime(), sprintf("`name` <= '%s'", date('Y-m-d H:i:s'))],
+            ['lt', 'name', new \DateTime(), sprintf("`name` < '%s'", date('Y-m-d H:i:s'))],
+            ['gt', 'name', new \DateTime(), sprintf("`name` > '%s'", date('Y-m-d H:i:s'))],
             ['range', 'name', [1, 2], '`name` BETWEEN 1 AND 2'],
             ['isnt', 'name', null, '`name` IS NOT NULL'],
             ['in', 'name', [1, 2], '`name` IN (1, 2)'],
             ['in', 'name', 1, '`name` IN (1)'],
-            ['unknown', 'name', 1, null],
             ['contains', 'name', true, "`name` LIKE '%1%'"],
             ['icontains', 'name', 'foo', "LOWER(`name`) LIKE '%foo%'"],
             ['icontains', 'name', 1, "LOWER(`name`) LIKE '%1%'"],
@@ -41,19 +40,19 @@ class LookupCollectionTest extends BaseTest
             ['iregex', 'name', 'foo', "`name` REGEXP 'foo'"],
             ['iregex', 'name', 1, "`name` REGEXP '1'"],
             ['iregex', 'name', true, "`name` REGEXP '1'"],
-            ['second', 'name', 1, "EXTRACT(SECOND FROM `name`)='1'"],
-            ['minute', 'name', 1, "EXTRACT(MINUTE FROM `name`)='1'"],
-            ['hour', 'name', 1, "EXTRACT(HOUR FROM `name`)='1'"],
-            ['year', 'name', 1, "EXTRACT(YEAR FROM `name`)='1'"],
-            ['month', 'name', 1, "EXTRACT(MONTH FROM `name`)='1'"],
-            ['day', 'name', 1, "EXTRACT(DAY FROM `name`)='1'"],
+            ['second', 'name', 1, "EXTRACT(SECOND FROM `name`) = '1'"],
+            ['minute', 'name', 1, "EXTRACT(MINUTE FROM `name`) = '1'"],
+            ['hour', 'name', 1, "EXTRACT(HOUR FROM `name`) = '1'"],
+            ['year', 'name', 1, "EXTRACT(YEAR FROM `name`) = '1'"],
+            ['month', 'name', 1, "EXTRACT(MONTH FROM `name`) = '1'"],
+            ['day', 'name', 1, "EXTRACT(DAY FROM `name`) = '1'"],
             // Monday
-            ['week_day', 'name', 1, "DAYOFWEEK(`name`)='2'"],
+            ['week_day', 'name', 1, "DAYOFWEEK(`name`) = '2'"],
             // Sunday
-            ['week_day', 'name', 7, "DAYOFWEEK(`name`)='1'"],
+            ['week_day', 'name', 7, "DAYOFWEEK(`name`) = '1'"],
 
-            ['json', 'attributes', ['name.foo.bar' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name.foo.bar')='bar'"],
-            ['json', 'attributes', ['name' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name')='bar'"],
+            ['json', 'attributes', ['name.foo.bar' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name.foo.bar') = 'bar'"],
+            ['json', 'attributes', ['name' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name') = 'bar'"],
             ['json', 'attributes', ['name__contains' => 'bar'], "JSON_EXTRACT(`attributes`, '$.name') LIKE '%bar%'"],
             ['json', 'attributes', ['name__icontains' => 'BAR'], "LOWER(JSON_EXTRACT(`attributes`, '$.name')) LIKE '%bar%'"],
             ['json', 'attributes', ['name__gte' => 1], "JSON_EXTRACT(`attributes`, '$.name') >= 1"],
@@ -75,7 +74,7 @@ class LookupCollectionTest extends BaseTest
      */
     public function testLookups($lookup, $field, $value, $result)
     {
-        $c = new LookupCollection();
+        $c = new ExpressionBuilder();
         $this->assertSame(
             $result,
             $c->process($this->getAdapter(), $lookup, $field, $value)
@@ -89,7 +88,7 @@ class LookupCollectionTest extends BaseTest
             'hour', 'day', 'month', 'week_day',
         ];
 
-        $c = new LookupCollection();
+        $c = new ExpressionBuilder();
         foreach ($lookups as $lookup) {
             $this->assertTrue($c->has($lookup));
         }

@@ -14,18 +14,18 @@ namespace Mindy\QueryBuilder;
 interface LookupCollectionInterface
 {
     /**
-     * @param $lookup
+     * @param string $lookup
      *
      * @return bool
      */
-    public function has($lookup);
+    public function has(string $lookup): bool;
 
     /**
      * @param $lookup
-     * @param $column
-     * @param $value
+     * @param $x
+     * @param $y
      *
      * @return mixed
      */
-    public function process(AdapterInterface $adapter, $lookup, $column, $value);
+    public function process(AdapterInterface $adapter, $lookup, $x, $y);
 }

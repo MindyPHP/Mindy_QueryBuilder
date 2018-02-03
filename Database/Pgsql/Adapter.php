@@ -124,11 +124,11 @@ class Adapter extends BaseAdapter implements AdapterInterface
     }
 
     /**
-     * @return LookupCollection
+     * @return ExpressionBuilder
      */
     public function getLookupCollection()
     {
-        return new LookupCollection();
+        return new ExpressionBuilder();
     }
 
     /**

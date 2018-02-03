@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Mysql;
 
-use Doctrine\DBAL\Query\Expression\ExpressionBuilder;
 use Doctrine\DBAL\Types\Type;
 use Mindy\QueryBuilder\AbstractBuilder;
 
@@ -176,32 +175,32 @@ class Builder extends AbstractBuilder
 
     public function extractYear($x, $y)
     {
-        return $this->expr->comparison(sprintf('EXTRACT(YEAR FROM %s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('EXTRACT(YEAR FROM %s)', $x), $y);
     }
 
     public function extractSecond($x, $y)
     {
-        return $this->expr->comparison(sprintf('EXTRACT(SECOND FROM %s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('EXTRACT(SECOND FROM %s)', $x), $y);
     }
 
     public function extractMinute($x, $y)
     {
-        return $this->expr->comparison(sprintf('EXTRACT(MINUTE FROM %s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('EXTRACT(MINUTE FROM %s)', $x), $y);
     }
 
     public function extractHour($x, $y)
     {
-        return $this->expr->comparison(sprintf('EXTRACT(HOUR FROM %s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('EXTRACT(HOUR FROM %s)', $x), $y);
     }
 
     public function extractDay($x, $y)
     {
-        return $this->expr->comparison(sprintf('EXTRACT(DAY FROM %s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('EXTRACT(DAY FROM %s)', $x), $y);
     }
 
     public function extractMonth($x, $y)
     {
-        return $this->expr->comparison(sprintf('EXTRACT(MONTH FROM %s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('EXTRACT(MONTH FROM %s)', $x), $y);
     }
 
     public function weekDay($x, $y)
@@ -221,7 +220,7 @@ class Builder extends AbstractBuilder
             $y += 1;
         }
 
-        return $this->expr->comparison(sprintf('DAYOFWEEK(%s)', $x), ExpressionBuilder::EQ, $y);
+        return $this->expr->eq(sprintf('DAYOFWEEK(%s)', $x), $y);
     }
 
     public function regex($x, $y)

@@ -22,7 +22,7 @@ class AbstractBuilder
     protected $connection;
 
     /**
-     * @var ExpressionBuilder
+     * @var BaseExpressionBuilder
      */
     protected $expr;
 

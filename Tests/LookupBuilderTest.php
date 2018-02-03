@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Tests;
 
-use Mindy\QueryBuilder\Database\Sqlite\LookupCollection;
+use Mindy\QueryBuilder\Database\Sqlite\ExpressionBuilder;
 use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
 
 class LookupBuilderTest extends BaseTest
@@ -24,13 +24,13 @@ class LookupBuilderTest extends BaseTest
     public function lookupProvider()
     {
         return [
-            [['id' => 1], '[[id]]=1'],
-            [['id__exact' => 1], '[[id]]=1'],
-            [['id__gte' => 1], '[[id]]>=1'],
-            [['id__lte' => 1], '[[id]]<=1'],
-            [['id__gt' => 1], '[[id]]>1'],
-            [['id__lt' => 1], '[[id]]<1'],
-            [['id__isnt' => 1], '[[id]]!=1'],
+            [['id' => 1], '[[id]] = 1'],
+            [['id__exact' => 1], '[[id]] = 1'],
+            [['id__gte' => 1], '[[id]] >= 1'],
+            [['id__lte' => 1], '[[id]] <= 1'],
+            [['id__gt' => 1], '[[id]] > 1'],
+            [['id__lt' => 1], '[[id]] < 1'],
+            [['id__isnt' => 1], '[[id]] != 1'],
             [['id__range' => [1, 2]], '[[id]] BETWEEN 1 AND 2'],
             [['id__isnull' => true], '[[id]] IS NULL'],
             [['id__isnull' => false], '[[id]] IS NOT NULL'],
@@ -51,7 +51,7 @@ class LookupBuilderTest extends BaseTest
     public function testLookups($where, $whereSql)
     {
         $builder = new LookupBuilder();
-        $builder->addLookupCollection(new LookupCollection());
+        $builder->addLookupCollection(new ExpressionBuilder());
         $qb = $this->getQueryBuilder();
         $adapter = $qb->getAdapter();
 

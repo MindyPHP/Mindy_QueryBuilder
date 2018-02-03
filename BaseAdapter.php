@@ -46,7 +46,7 @@ abstract class BaseAdapter implements SQLGeneratorInterface
     }
 
     /**
-     * @return BaseLookupCollection|LookupCollectionInterface
+     * @return BaseExpressionBuilder|LookupCollectionInterface
      */
     abstract public function getLookupCollection();
 
