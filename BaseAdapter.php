@@ -349,17 +349,6 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
-     * @param $tableName
-     * @param bool $cascade
-     *
-     * @return string
-     */
-    public function sqlTruncateTable($tableName, $cascade = false)
-    {
-        return 'TRUNCATE TABLE '.$this->getQuotedName($tableName);
-    }
-
-    /**
      * @param $value
      *
      * @return string

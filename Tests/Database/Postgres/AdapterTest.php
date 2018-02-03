@@ -43,8 +43,6 @@ class AdapterTest extends BaseTest
         $this->assertSame('OFFSET 10', $adapter->sqlLimitOffset(null, 10));
         $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
 
-        $this->assertSame('TRUNCATE TABLE foo', $adapter->sqlTruncateTable('foo', false));
-
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
         $this->assertSame('SELECT SETVAL(foo, 100, false)', $adapter->sqlResetSequence('foo', 100));
 
