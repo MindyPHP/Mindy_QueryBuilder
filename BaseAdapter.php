@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Types\Type;
 use Mindy\QueryBuilder\Aggregation\Aggregation;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Utils\TableNameResolver;
@@ -388,19 +389,50 @@ abstract class BaseAdapter implements AdapterInterface
      */
     abstract public function getBoolean($value = null);
 
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    abstract public function getDateTime($value = null);
+    public function formatDateTime($value)
+    {
+        if ($value instanceof \DateTime) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            $date = new \DateTime();
+            $date->setTimestamp((int)$value);
+            return $date;
+        } else if (null === $value) {
+            return new \DateTime();
+        } else {
+            return new \DateTime($value);
+        }
+    }
 
     /**
      * @param null $value
      *
      * @return string
      */
-    abstract public function getDate($value = null);
+    public function getDateTime($value = null)
+    {
+        return Type::getType(Type::DATETIME)
+            ->convertToDatabaseValue(
+                $this->formatDateTime($value),
+                $this->connection->getDatabasePlatform()
+            );
+    }
+
+    /**
+     * @param null $value
+     *
+     * @return string
+     */
+    public function getDate($value = null)
+    {
+        return Type::getType(Type::DATE)
+            ->convertToDatabaseValue(
+                $this->formatDateTime($value),
+                $this->connection->getDatabasePlatform()
+            );
+    }
 
     /**
      * @param null $value

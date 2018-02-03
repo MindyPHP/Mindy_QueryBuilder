@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Mysql;
 
+use Doctrine\DBAL\Types\Type;
 use Mindy\QueryBuilder\BaseAdapter;
 
 class Adapter extends BaseAdapter
@@ -25,7 +26,7 @@ class Adapter extends BaseAdapter
      */
     public function quoteSimpleTableName($name)
     {
-        return false !== strpos($name, '`') ? $name : '`'.$name.'`';
+        return false !== strpos($name, '`') ? $name : '`' . $name . '`';
     }
 
     /**
@@ -38,7 +39,7 @@ class Adapter extends BaseAdapter
      */
     public function quoteSimpleColumnName($name)
     {
-        return false !== strpos($name, '`') || '*' === $name ? $name : '`'.$name.'`';
+        return false !== strpos($name, '`') || '*' === $name ? $name : '`' . $name . '`';
     }
 
     /**
@@ -62,45 +63,10 @@ class Adapter extends BaseAdapter
     public function getBoolean($value = null)
     {
         if ('boolean' === gettype($value)) {
-            return (int) $value;
+            return (int)$value;
         }
 
         return $value ? 1 : 0;
-    }
-
-    public function formatDateTime($value, $format)
-    {
-        if ($value instanceof \DateTime) {
-            $value = $value->format($format);
-        } elseif (null === $value) {
-            $value = date($format);
-        } elseif (is_numeric($value)) {
-            $value = date($format, (int) $value);
-        } elseif (is_string($value)) {
-            $value = date($format, strtotime($value));
-        }
-
-        return (string) $value;
-    }
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDateTime($value = null)
-    {
-        return $this->formatDateTime($value, 'Y-m-d H:i:s');
-    }
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDate($value = null)
-    {
-        return $this->formatDateTime($value, 'Y-m-d');
     }
 
     /**
@@ -113,11 +79,11 @@ class Adapter extends BaseAdapter
      */
     public function sqlResetSequence($tableName, $value)
     {
-        return 'ALTER TABLE '.$this->getQuotedName($tableName).' AUTO_INCREMENT='.(int) $value;
+        return 'ALTER TABLE ' . $this->getQuotedName($tableName) . ' AUTO_INCREMENT=' . (int)$value;
     }
 
     /**
-     * @param bool   $check
+     * @param bool $check
      * @param string $schema
      * @param string $table
      *
@@ -125,7 +91,7 @@ class Adapter extends BaseAdapter
      */
     public function sqlCheckIntegrity($check = true, $schema = '', $table = '')
     {
-        return 'SET FOREIGN_KEY_CHECKS = '.$this->getBoolean($check);
+        return 'SET FOREIGN_KEY_CHECKS = ' . $this->getBoolean($check);
     }
 
     /**
@@ -138,7 +104,7 @@ class Adapter extends BaseAdapter
     public function prepareValue($value)
     {
         if ('boolean' === gettype($value)) {
-            return (int) $value;
+            return (int)$value;
         }
 
         return parent::prepareValue($value);

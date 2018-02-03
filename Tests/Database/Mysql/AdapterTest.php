@@ -13,6 +13,7 @@ namespace Mindy\QueryBuilder\Tests\Database\Mysql;
 
 use Doctrine\DBAL\Schema\Table;
 use Mindy\QueryBuilder\AdapterInterface;
+use Mindy\QueryBuilder\Database\Mysql\Adapter;
 use Mindy\QueryBuilder\Tests\BaseTest;
 
 class AdapterTest extends BaseTest
@@ -32,6 +33,7 @@ class AdapterTest extends BaseTest
 
     public function testAdapter()
     {
+        /** @var Adapter $adapter */
         $adapter = $this->getAdapter();
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
         $this->assertSame(1, $adapter->prepareValue(1));

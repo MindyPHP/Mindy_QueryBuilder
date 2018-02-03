@@ -114,45 +114,4 @@ class Adapter extends BaseAdapter implements AdapterInterface
     {
         return (bool) $value ? 'TRUE' : 'FALSE';
     }
-
-    /**
-     * @param $value
-     * @param $format
-     *
-     * @return bool|string
-     */
-    public function formatDateTime($value, $format)
-    {
-        if ($value instanceof \DateTime) {
-            $value = $value->format($format);
-        } elseif (null === $value) {
-            $value = date($format);
-        } elseif (is_numeric($value)) {
-            $value = date($format, (int) $value);
-        } elseif (is_string($value)) {
-            $value = date($format, strtotime($value));
-        }
-
-        return (string) $value;
-    }
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDateTime($value = null)
-    {
-        return $this->formatDateTime($value, 'Y-m-d H:i:s');
-    }
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDate($value = null)
-    {
-        return $this->formatDateTime($value, 'Y-m-d');
-    }
 }

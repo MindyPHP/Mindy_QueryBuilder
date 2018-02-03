@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Types\Type;
 
 class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectionInterface
 {
@@ -22,6 +23,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     /**
      * BaseExpressionBuilder constructor.
+     *
      * @param Connection $connection
      */
     public function __construct(Connection $connection)
@@ -30,20 +32,37 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     }
 
     /**
-     * @param string $str
-     * @return string
+     * @param $value
+     * @param string $type
+     *
      * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return mixed
+     */
+    protected function castToType($value, string $type)
+    {
+        $platform = $this->connection->getDatabasePlatform();
+
+        return Type::getType($type)->convertToDatabaseValue($value, $platform);
+    }
+
+    /**
+     * @param string $str
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
      */
     public function getQuotedName(string $str): string
     {
         $platform = $this->connection->getDatabasePlatform();
         $keywords = $platform->getReservedKeywordsList();
-        $parts = explode(".", $str);
+        $parts = explode('.', $str);
         foreach ($parts as $k => $v) {
             $parts[$k] = ($keywords->isKeyword($v)) ? $platform->quoteIdentifier($v) : $v;
         }
 
-        return implode(".", $parts);
+        return implode('.', $parts);
     }
 
     public function parse(string $str): array
@@ -272,7 +291,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         } elseif ($y instanceof ToSqlInterface) {
             $sqlValue = $y->toSQL();
         } else {
-            $sqlValue = $adapter->quoteSql((string)$y);
+            $sqlValue = $adapter->quoteSql((string) $y);
         }
 
         return $this->in(
