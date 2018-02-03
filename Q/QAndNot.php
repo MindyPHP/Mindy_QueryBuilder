@@ -11,12 +11,13 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Q;
 
-use Mindy\QueryBuilder\QueryBuilder;
-
 class QAndNot extends QAnd
 {
-    public function toSQL(QueryBuilder $queryBuilder)
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
-        return 'NOT ('.parent::toSQL($queryBuilder).')';
+        return 'NOT ('.parent::toSQL().')';
     }
 }

@@ -16,8 +16,10 @@ use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\Expression;
 use Mindy\QueryBuilder\LookupBuilderInterface;
 use Mindy\QueryBuilder\QueryBuilder;
+use Mindy\QueryBuilder\QueryBuilderAwareInterface;
+use Mindy\QueryBuilder\QueryBuilderInterface;
 
-abstract class Q
+abstract class Q implements QueryBuilderAwareInterface
 {
     /**
      * @var array|string|Q
@@ -36,6 +38,10 @@ abstract class Q
      */
     protected $adapter;
     /**
+     * @var QueryBuilderInterface|null
+     */
+    protected $queryBuilder;
+    /**
      * @var string|null
      */
     private $_tableAlias;
@@ -43,6 +49,14 @@ abstract class Q
     public function __construct($where)
     {
         $this->where = $where;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setQueryBuilder(QueryBuilderInterface $queryBuilder)
+    {
+        $this->queryBuilder = $queryBuilder;
     }
 
     public function setTableAlias($tableAlias)
@@ -85,17 +99,17 @@ abstract class Q
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function toSQL(QueryBuilder $queryBuilder)
+    public function toSQL(): string
     {
-        return $this->parseWhere($queryBuilder);
+        return $this->parseWhere($this->queryBuilder);
     }
 
     /**
      * @return string
      */
-    protected function parseWhere(QueryBuilder $queryBuilder)
+    protected function parseWhere(QueryBuilderInterface $queryBuilder)
     {
         return $this->parseConditions($queryBuilder, $this->where);
     }
@@ -113,7 +127,7 @@ abstract class Q
      *
      * @return string
      */
-    protected function parseConditions(QueryBuilder $queryBuilder, $where)
+    protected function parseConditions(QueryBuilderInterface $queryBuilder, $where)
     {
         if (empty($where)) {
             return '';
@@ -148,7 +162,7 @@ abstract class Q
      *
      * @return string
      */
-    protected function parsePart(QueryBuilder $queryBuilder, $part, $operator = null)
+    protected function parsePart(QueryBuilderInterface $queryBuilder, $part, $operator = null)
     {
         if (null === $operator) {
             $operator = $this->getOperator();

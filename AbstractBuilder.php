@@ -13,6 +13,7 @@ namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\Expression\ExpressionBuilder;
+use Doctrine\DBAL\Schema\Schema;
 
 class AbstractBuilder
 {
@@ -27,6 +28,11 @@ class AbstractBuilder
     protected $expr;
 
     /**
+     * @var Schema
+     */
+    protected $schema;
+
+    /**
      * Builder constructor.
      *
      * @param Connection $connection
@@ -34,6 +40,7 @@ class AbstractBuilder
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
+        $this->schema = $connection->getSchemaManager()->createSchema();
         $this->expr = $connection->getExpressionBuilder();
     }
 

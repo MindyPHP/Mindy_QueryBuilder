@@ -36,29 +36,6 @@ class Adapter extends BaseAdapter implements AdapterInterface
     }
 
     /**
-     * @param $tableName
-     * @param bool $ifExists
-     * @param bool $cascade
-     *
-     * @return string
-     */
-    public function sqlDropTable($tableName, $ifExists = false, $cascade = false)
-    {
-        return parent::sqlDropTable($tableName, $ifExists, $cascade).($cascade ? ' CASCADE' : '');
-    }
-
-    /**
-     * @param $tableName
-     * @param bool $cascade
-     *
-     * @return string
-     */
-    public function sqlTruncateTable($tableName, $cascade = false)
-    {
-        return parent::sqlTruncateTable($tableName, $cascade).($cascade ? ' CASCADE' : '');
-    }
-
-    /**
      * Creates a SQL statement for resetting the sequence value of a table's primary key.
      * The sequence will be reset such that the primary key of the next new row inserted
      * will have the specified value or 1.
@@ -100,30 +77,6 @@ class Adapter extends BaseAdapter implements AdapterInterface
     }
 
     /**
-     * Builds a SQL statement for changing the definition of a column.
-     *
-     * @param string $table  the table whose column is to be changed. The table name will be properly quoted by the method.
-     * @param string $column the name of the column to be changed. The name will be properly quoted by the method.
-     * @param string $type   the new column type. The [[getColumnType()]] method will be invoked to convert abstract
-     *                       column type (if any) into the physical one. Anything that is not recognized as abstract type will be kept
-     *                       in the generated SQL. For example, 'string' will be turned into 'varchar(255)', while 'string not null'
-     *                       will become 'varchar(255) not null'. You can also use PostgreSQL-specific syntax such as `SET NOT NULL`.
-     *
-     * @return string the SQL statement for changing the definition of a column
-     */
-    public function sqlAlterColumn($table, $column, $type)
-    {
-        // https://github.com/yiisoft/yii2/issues/4492
-        // http://www.postgresql.org/docs/9.1/static/sql-altertable.html
-        if (!preg_match('/^(DROP|SET|RESET)\s+/i', $type)) {
-            $type = 'TYPE '.$type;
-        }
-
-        return 'ALTER TABLE '.$this->quoteTableName($table).' ALTER COLUMN '
-            .$this->quoteColumn($column).' '.$type;
-    }
-
-    /**
      * @return ExpressionBuilder
      */
     public function getLookupCollection()
@@ -150,51 +103,6 @@ class Adapter extends BaseAdapter implements AdapterInterface
     public function quoteSimpleTableName($name)
     {
         return false !== strpos($name, '"') ? $name : '"'.$name.'"';
-    }
-
-    /**
-     * @param $oldTableName
-     * @param $newTableName
-     *
-     * @return string
-     */
-    public function sqlRenameTable($oldTableName, $newTableName)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($oldTableName).' RENAME TO '.$this->quoteTableName($newTableName);
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return string
-     */
-    public function sqlDropIndex($tableName, $name)
-    {
-        return 'DROP INDEX '.$this->quoteColumn($name);
-    }
-
-    /**
-     * @param string $tableName
-     * @param string $name
-     *
-     * @return string
-     */
-    public function sqlDropPrimaryKey($tableName, $name)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' DROP CONSTRAINT '.$this->quoteColumn($name);
-    }
-
-    /**
-     * @param $tableName
-     * @param $oldName
-     * @param $newName
-     *
-     * @return mixed
-     */
-    public function sqlRenameColumn($tableName, $oldName, $newName)
-    {
-        return "ALTER TABLE {$this->quoteTableName($tableName)} RENAME COLUMN ".$this->quoteColumn($oldName).' TO '.$this->quoteColumn($newName);
     }
 
     /**
@@ -246,28 +154,5 @@ class Adapter extends BaseAdapter implements AdapterInterface
     public function getDate($value = null)
     {
         return $this->formatDateTime($value, 'Y-m-d');
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @return string
-     */
-    public function sqlAddColumn($tableName, $column, $type)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' ADD '.$this->quoteColumn($column).' '.$type;
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return mixed
-     */
-    public function sqlDropForeignKey($tableName, $name)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' DROP CONSTRAINT '.$this->quoteColumn($name);
     }
 }

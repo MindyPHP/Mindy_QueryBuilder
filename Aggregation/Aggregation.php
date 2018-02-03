@@ -37,7 +37,10 @@ class Aggregation extends Expression
         return $this;
     }
 
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return (empty($this->tableAlias) ? '' : '[['.$this->tableAlias.']].').$this->fieldsSql;
     }

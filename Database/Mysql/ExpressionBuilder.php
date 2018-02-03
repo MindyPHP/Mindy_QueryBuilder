@@ -22,7 +22,11 @@ class ExpressionBuilder extends BaseExpressionBuilder
             $y = (int) $y;
         }
 
-        return $adapter->quoteColumn($x).' REGEXP '.$adapter->quoteValue((string) $y);
+        return $this->comparison(
+            $adapter->quoteColumn($x),
+            'REGEXP',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupRegex(AdapterInterface $adapter, string $x, $y): string
@@ -31,44 +35,69 @@ class ExpressionBuilder extends BaseExpressionBuilder
             $y = (int) $y;
         }
 
-        return 'BINARY '.$adapter->quoteColumn($x).' REGEXP '.$adapter->quoteValue((string) $y);
+        $sql = $this->comparison(
+            $adapter->quoteColumn($x),
+            'REGEXP',
+            $adapter->quoteValue((string) $y)
+        );
+
+        return 'BINARY '.$sql;
     }
 
     protected function lookupSecond(AdapterInterface $adapter, string $x, $y): string
     {
-        return 'EXTRACT(SECOND FROM '.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'EXTRACT(SECOND FROM '.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupYear(AdapterInterface $adapter, string $x, $y): string
     {
-        return 'EXTRACT(YEAR FROM '.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'EXTRACT(YEAR FROM '.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupMinute(AdapterInterface $adapter, string $x, $y): string
     {
-        return 'EXTRACT(MINUTE FROM '.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'EXTRACT(MINUTE FROM '.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupHour(AdapterInterface $adapter, string $x, $y): string
     {
-        return 'EXTRACT(HOUR FROM '.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'EXTRACT(HOUR FROM '.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupDay(AdapterInterface $adapter, string $x, $y): string
     {
-        return 'EXTRACT(DAY FROM '.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'EXTRACT(DAY FROM '.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupMonth(AdapterInterface $adapter, string $x, $y): string
     {
-        return 'EXTRACT(MONTH FROM '.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'EXTRACT(MONTH FROM '.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) $y)
+        );
     }
 
     protected function lookupWeekday(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = WeekDayFormat::format($y);
-
-        return 'DAYOFWEEK('.$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return $this->eq(
+            'DAYOFWEEK('.$adapter->quoteColumn($x).')',
+            $adapter->quoteValue((string) WeekDayFormat::format($y))
+        );
     }
 
     protected function lookupJson(AdapterInterface $adapter, string $x, $y): string

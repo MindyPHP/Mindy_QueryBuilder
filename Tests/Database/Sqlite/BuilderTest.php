@@ -55,8 +55,8 @@ class BuilderTest extends ConnectionAwareTest
             ['name__isnull', true, 'name IS NULL'],
             ['name__isnull', false, 'name IS NOT NULL'],
 
-            ['name__weekday', '1', 'strftime(\'%w\', name) = 2'],
-            ['name__weekday', '7', 'strftime(\'%w\', name) = 1'],
+            ['name__weekday', '1', 'strftime(\'%w\', name) = 1'],
+            ['name__weekday', '7', 'strftime(\'%w\', name) = 0'],
 
             ['name__regex', '1', 'name REGEXP /1/'],
             ['name__iregex', '7', 'name REGEXP /7/i'],

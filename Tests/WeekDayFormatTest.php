@@ -40,6 +40,14 @@ class WeekDayFormatTest extends TestCase
         $this->assertSame($expected, Database\Mysql\WeekDayFormat::format($dayOfWeek));
     }
 
+    /**
+     * @expectedException \LogicException
+     */
+    public function testMysqlException()
+    {
+        Database\Mysql\WeekDayFormat::format(10);
+    }
+
     public function sqliteProvider()
     {
         return [
@@ -64,15 +72,23 @@ class WeekDayFormatTest extends TestCase
         $this->assertSame($expected, Database\Sqlite\WeekDayFormat::format($dayOfWeek));
     }
 
+    /**
+     * @expectedException \LogicException
+     */
+    public function testSqliteException()
+    {
+        Database\Sqlite\WeekDayFormat::format(10);
+    }
+
     public function pgsqlProvider()
     {
         return [
-            [2, 1], // Понедельник
-            [3, 2], // Вторник
-            [4, 3], // Среда
-            [5, 4], // Четверг
-            [6, 5], // Пятница
-            [7, 6], // Суббота
+            [1, 1], // Понедельник
+            [2, 2], // Вторник
+            [3, 3], // Среда
+            [4, 4], // Четверг
+            [5, 5], // Пятница
+            [6, 6], // Суббота
             [0, 7], // Воскресенье
         ];
     }
@@ -86,5 +102,13 @@ class WeekDayFormatTest extends TestCase
     public function testPostgres(int $expected, int $dayOfWeek)
     {
         $this->assertSame($expected, Database\Pgsql\WeekDayFormat::format($dayOfWeek));
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testPostgresException()
+    {
+        Database\Pgsql\WeekDayFormat::format(10);
     }
 }

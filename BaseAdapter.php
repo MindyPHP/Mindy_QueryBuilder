@@ -16,7 +16,7 @@ use Mindy\QueryBuilder\Aggregation\Aggregation;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Utils\TableNameResolver;
 
-abstract class BaseAdapter implements SQLGeneratorInterface
+abstract class BaseAdapter implements AdapterInterface
 {
     /**
      * @var string
@@ -194,30 +194,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
     }
 
     /**
-     * Checks to see if the given limit is effective.
-     *
-     * @param mixed $limit the given limit
-     *
-     * @return bool whether the limit is effective
-     */
-    public function hasLimit($limit)
-    {
-        return (int) $limit > 0;
-    }
-
-    /**
-     * Checks to see if the given offset is effective.
-     *
-     * @param mixed $offset the given offset
-     *
-     * @return bool whether the offset is effective
-     */
-    public function hasOffset($offset)
-    {
-        return (int) $offset > 0;
-    }
-
-    /**
      * @param int $limit
      * @param int $offset
      *
@@ -263,49 +239,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
         }
 
         return is_array($columns) ? implode(', ', $columns) : $columns;
-    }
-
-    /**
-     * Builds a SQL statement for adding a primary key constraint to an existing table.
-     *
-     * @param string       $name      the name of the primary key constraint
-     * @param string       $tableName the table that the primary key constraint will be added to
-     * @param string|array $columns   comma separated string or array of columns that the primary key will consist of
-     *
-     * @return string the SQL statement for adding a primary key constraint to an existing table
-     */
-    public function sqlAddPrimaryKey($tableName, $name, $columns)
-    {
-        if (is_string($columns)) {
-            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
-        }
-        foreach ($columns as $i => $col) {
-            $columns[$i] = $this->quoteColumn($col);
-        }
-
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' ADD CONSTRAINT '
-        .$this->quoteColumn($name).' PRIMARY KEY ('.implode(', ', $columns).')';
-    }
-
-    /**
-     * Builds a SQL statement for removing a primary key constraint to an existing table.
-     *
-     * @param string $name      the name of the primary key constraint to be removed
-     * @param string $tableName the table that the primary key constraint will be removed from
-     *
-     * @return string the SQL statement for removing a primary key constraint from an existing table
-     */
-    public function sqlDropPrimaryKey($tableName, $name)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' DROP PRIMARY KEY '.$this->quoteColumn($name);
-    }
-
-    public function sqlAlterColumn($tableName, $column, $type)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' CHANGE '
-        .$this->quoteColumn($column).' '
-        .$this->quoteColumn($column).' '
-        .$type;
     }
 
     /**
@@ -377,7 +310,7 @@ abstract class BaseAdapter implements SQLGeneratorInterface
         $tableName = $this->getRawTableName($tableName);
         $parts = [];
         foreach ($columns as $column => $value) {
-            if ($value instanceof Expression) {
+            if ($value instanceof ToSqlInterface) {
                 $val = $this->quoteSql($value->toSQL());
             } else {
                 // TODO refact, use getSqlType
@@ -467,28 +400,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
     }
 
     /**
-     * @param $oldTableName
-     * @param $newTableName
-     *
-     * @return string
-     */
-    abstract public function sqlRenameTable($oldTableName, $newTableName);
-
-    /**
-     * @param $tableName
-     * @param bool $ifExists
-     * @param bool $cascade
-     *
-     * @return string
-     */
-    public function sqlDropTable($tableName, $ifExists = false, $cascade = false)
-    {
-        $tableName = $this->getRawTableName($tableName);
-
-        return ($ifExists ? 'DROP TABLE IF EXISTS ' : 'DROP TABLE ').$this->quoteTableName($tableName);
-    }
-
-    /**
      * @param $tableName
      * @param bool $cascade
      *
@@ -498,14 +409,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
     {
         return 'TRUNCATE TABLE '.$this->quoteTableName($tableName);
     }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return string
-     */
-    abstract public function sqlDropIndex($tableName, $name);
 
     /**
      * @param $value
@@ -523,62 +426,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
         }
 
         return $value;
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     *
-     * @return string
-     */
-    public function sqlDropColumn($tableName, $column)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' DROP COLUMN '.$this->quoteColumn($column);
-    }
-
-    /**
-     * @param $tableName
-     * @param $oldName
-     * @param $newName
-     *
-     * @return mixed
-     */
-    abstract public function sqlRenameColumn($tableName, $oldName, $newName);
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return mixed
-     */
-    abstract public function sqlDropForeignKey($tableName, $name);
-
-    /**
-     * @param $tableName
-     * @param $name
-     * @param $columns
-     * @param $refTable
-     * @param $refColumns
-     * @param null $delete
-     * @param null $update
-     *
-     * @return string
-     */
-    public function sqlAddForeignKey($tableName, $name, $columns, $refTable, $refColumns, $delete = null, $update = null)
-    {
-        $sql = 'ALTER TABLE '.$this->quoteTableName($tableName)
-            .' ADD CONSTRAINT '.$this->quoteColumn($name)
-            .' FOREIGN KEY ('.$this->buildColumns($columns).')'
-            .' REFERENCES '.$this->quoteTableName($refTable)
-            .' ('.$this->buildColumns($refColumns).')';
-        if (null !== $delete) {
-            $sql .= ' ON DELETE '.$delete;
-        }
-        if (null !== $update) {
-            $sql .= ' ON UPDATE '.$update;
-        }
-
-        return $sql;
     }
 
     /**
@@ -615,62 +462,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
     public function getTimestamp($value = null)
     {
         return $value instanceof \DateTime ? $value->getTimestamp() : strtotime($value);
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @return string
-     */
-    abstract public function sqlAddColumn($tableName, $column, $type);
-
-    /**
-     * @param $tableName
-     * @param $name
-     * @param array $columns
-     * @param bool  $unique
-     *
-     * @return string
-     */
-    public function sqlCreateIndex($tableName, $name, array $columns, $unique = false)
-    {
-        return ($unique ? 'CREATE UNIQUE INDEX ' : 'CREATE INDEX ')
-        .$this->quoteTableName($name).' ON '
-        .$this->quoteTableName($tableName)
-        .' ('.$this->buildColumns($columns).')';
-    }
-
-    /**
-     * @param $tables
-     *
-     * @return string
-     */
-    public function sqlFrom($tables)
-    {
-        if (empty($tables)) {
-            return '';
-        }
-
-        if (!is_array($tables)) {
-            $tables = (array) $tables;
-        }
-        $quotedTableNames = [];
-        foreach ($tables as $tableAlias => $table) {
-            if ($table instanceof QueryBuilder) {
-                $tableRaw = $table->toSQL();
-            } else {
-                $tableRaw = $this->getRawTableName($table);
-            }
-            if (false !== strpos($tableRaw, 'SELECT')) {
-                $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->quoteTableName($tableAlias));
-            } else {
-                $quotedTableNames[] = $this->quoteTableName($tableRaw).(is_numeric($tableAlias) ? '' : ' AS '.$this->quoteTableName($tableAlias));
-            }
-        }
-
-        return implode(', ', $quotedTableNames);
     }
 
     /**
@@ -946,16 +737,6 @@ abstract class BaseAdapter implements SQLGeneratorInterface
             '{update}' => $this->sqlUpdate($tableName, $update),
             '{where}' => $this->sqlWhere($where),
         ]);
-    }
-
-    public function generateCreateTable($tableName, $columns, $options = null)
-    {
-        return $this->quoteSql($this->sqlCreateTable($this->quoteTableName($tableName), $columns, $options));
-    }
-
-    public function generateCreateTableIfNotExists($tableName, $columns, $options = null)
-    {
-        return $this->quoteSql($this->sqlCreateTable($this->quoteTableName($tableName), $columns, $options, true));
     }
 
     /**

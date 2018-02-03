@@ -143,7 +143,7 @@ class BuildWhereTest extends BaseTest
 
         $qb = $this->getQueryBuilder();
         $qb->from('test')->where(['id' => 2])->orWhere(['id' => 1])->where(['id__isnt' => 3]);
-        $this->assertSql('WHERE ((([[id]] = 2)) AND (([[id]] != 3))) OR (([[id]] = 1))', $qb->buildWhere());
+        $this->assertSql('WHERE ((([[id]] = 2)) AND (([[id]] <> 3))) OR (([[id]] = 1))', $qb->buildWhere());
     }
 
     public function testEmpty()

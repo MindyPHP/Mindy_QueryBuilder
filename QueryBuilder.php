@@ -20,9 +20,8 @@ use Mindy\QueryBuilder\Database\Sqlite\Adapter as SqliteAdapter;
 use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Q\QAnd;
-use Doctrine\DBAL\Query\QueryBuilder as DbalQueryBuilder;
 
-class QueryBuilder
+class QueryBuilder implements QueryBuilderInterface
 {
     const TYPE_SELECT = 'SELECT';
     const TYPE_UPDATE = 'UPDATE';
@@ -119,11 +118,6 @@ class QueryBuilder
      */
     protected $connection;
 
-    /**
-     * @var DbalQueryBuilder
-     */
-    protected $queryBuilder;
-
     public function getConnection()
     {
         return $this->connection;
@@ -178,7 +172,6 @@ class QueryBuilder
         $this->connection = $connection;
         $this->adapter = $adapter;
         $this->lookupBuilder = $lookupBuilder;
-        $this->queryBuilder = new DbalQueryBuilder($connection);
     }
 
     /**
@@ -588,14 +581,19 @@ class QueryBuilder
     {
         $tableAlias = $this->getAlias();
         $parts = [];
+
+        if ($condition instanceof QueryBuilderAwareInterface) {
+            $condition->setQueryBuilder($this);
+        }
+
         if ($condition instanceof Expression) {
             $parts[] = $this->getAdapter()->quoteSql($condition->toSQL());
         } elseif ($condition instanceof Q) {
             $condition->setLookupBuilder($this->getLookupBuilder());
             $condition->setAdapter($this->getAdapter());
             $condition->setTableAlias($tableAlias);
-            $parts[] = $condition->toSQL($this);
-        } elseif ($condition instanceof self) {
+            $parts[] = $condition->toSQL();
+        } elseif ($condition instanceof ToSqlInterface) {
             $parts[] = $condition->toSQL();
         } elseif (is_array($condition)) {
             foreach ($condition as $key => $value) {
@@ -808,11 +806,9 @@ class QueryBuilder
     }
 
     /**
-     * @throws Exception
-     *
-     * @return string
+     * {@inheritdoc}
      */
-    public function toSQL()
+    public function toSQL(): string
     {
         $type = $this->getType();
         if (self::TYPE_SELECT == $type) {
@@ -1061,12 +1057,31 @@ class QueryBuilder
 
     public function buildFrom()
     {
-        if (!empty($this->_alias) && !is_array($this->_from)) {
-            $from = [$this->_alias => $this->_from];
-        } else {
-            $from = $this->_from;
+        if (empty($this->_from)) {
+            return '';
         }
-        $sql = $this->getAdapter()->sqlFrom($from);
+
+        if (!empty($this->_alias) && !is_array($this->_from)) {
+            $tables = [$this->_alias => $this->_from];
+        } else {
+            $tables = (array)$this->_from;
+        }
+
+        $quotedTableNames = [];
+        foreach ($tables as $tableAlias => $table) {
+            if ($table instanceof QueryBuilder) {
+                $tableRaw = $table->toSQL();
+            } else {
+                $tableRaw = $this->getAdapter()->getRawTableName($table);
+            }
+            if (false !== strpos($tableRaw, 'SELECT')) {
+                $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->quoteTableName($tableAlias));
+            } else {
+                $quotedTableNames[] = $this->getAdapter()->quoteTableName($tableRaw).(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->quoteTableName($tableAlias));
+            }
+        }
+
+        $sql = implode(', ', $quotedTableNames);
 
         return empty($sql) ? '' : ' FROM '.$sql;
     }

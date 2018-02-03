@@ -20,6 +20,10 @@ class BuildUpdateTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->setTypeUpdate()->where(['id' => 1])->update('test', ['name' => 'foo']);
         $this->assertSql('UPDATE [[test]] SET [[name]]=@foo@ WHERE ([[id]] = 1)', $qb->toSQL());
+
+        $qb = $this->getQueryBuilder();
+        $qb->setTypeUpdate()->where(['id__gte' => 1])->update('test', ['name' => 'foo']);
+        $this->assertSql('UPDATE [[test]] SET [[name]]=@foo@ WHERE ([[id]] >= 1)', $qb->toSQL());
     }
 
     public function testExpression()

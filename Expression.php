@@ -11,16 +11,26 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder;
 
-class Expression
+class Expression implements ToSqlInterface
 {
+    /**
+     * @var string
+     */
     private $expression = '';
 
+    /**
+     * Expression constructor.
+     * @param $expression
+     */
     public function __construct($expression)
     {
         $this->expression = $expression;
     }
 
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return $this->expression;
     }

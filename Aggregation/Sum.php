@@ -13,7 +13,10 @@ namespace Mindy\QueryBuilder\Aggregation;
 
 class Sum extends Aggregation
 {
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return 'SUM('.parent::toSQL().')'.(empty($this->alias) ? '' : ' AS [['.$this->alias.']]');
     }

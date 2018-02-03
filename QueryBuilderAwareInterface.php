@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 /*
@@ -9,15 +8,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\Q;
+namespace Mindy\QueryBuilder;
 
-class QOrNot extends QOr
+interface QueryBuilderAwareInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function toSQL(): string
-    {
-        return 'NOT ('.parent::toSQL().')';
-    }
+    public function setQueryBuilder(QueryBuilderInterface $queryBuilder);
 }

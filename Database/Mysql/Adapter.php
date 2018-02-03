@@ -11,12 +11,9 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Mysql;
 
-use Exception;
-use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseAdapter;
-use Mindy\QueryBuilder\SQLGeneratorInterface;
 
-class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInterface
+class Adapter extends BaseAdapter
 {
     /**
      * Quotes a table name for use in a query.
@@ -55,52 +52,6 @@ class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInter
     public function getRandomOrder()
     {
         return 'RAND()';
-    }
-
-    /**
-     * @param $oldTableName
-     * @param $newTableName
-     *
-     * @return string
-     */
-    public function sqlRenameTable($oldTableName, $newTableName)
-    {
-        return 'RENAME TABLE '.$this->quoteTableName($oldTableName).' TO '.$this->quoteTableName($newTableName);
-    }
-
-    /**
-     * Builds a SQL statement for removing a primary key constraint to an existing table.
-     *
-     * @param string $name  the name of the primary key constraint to be removed
-     * @param string $table the table that the primary key constraint will be removed from
-     *
-     * @return string the SQL statement for removing a primary key constraint from an existing table
-     */
-    public function sqlDropPrimaryKey($table, $name)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($table).' DROP PRIMARY KEY';
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return string
-     */
-    public function sqlDropIndex($tableName, $name)
-    {
-        return 'DROP INDEX '.$this->quoteColumn($name).' ON '.$this->quoteTableName($tableName);
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return mixed
-     */
-    public function sqlDropForeignKey($tableName, $name)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' DROP FOREIGN KEY '.$this->quoteColumn($name);
     }
 
     /**
@@ -154,18 +105,6 @@ class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInter
 
     /**
      * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @return string
-     */
-    public function sqlAddColumn($tableName, $column, $type)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' ADD '.$this->quoteColumn($column).' '.$type;
-    }
-
-    /**
-     * @param $tableName
      * @param $value
      *
      * @return string
@@ -187,35 +126,6 @@ class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInter
     public function sqlCheckIntegrity($check = true, $schema = '', $table = '')
     {
         return 'SET FOREIGN_KEY_CHECKS = '.$this->getBoolean($check);
-    }
-
-    /**
-     * @param $tableName
-     * @param $oldName
-     * @param $newName
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlRenameColumn($tableName, $oldName, $newName)
-    {
-        $quotedTable = $this->quoteTableName($tableName);
-        $row = $this->connection->query('SHOW CREATE TABLE '.$quotedTable)->fetch();
-        $sql = $row['Create Table'];
-
-        if (preg_match_all('/^\s*`(.*?)`\s+(.*?),?$/m', $sql, $matches)) {
-            foreach ($matches[1] as $i => $c) {
-                if ($c === $oldName) {
-                    return "ALTER TABLE {$quotedTable} CHANGE "
-                    .$this->quoteColumn($oldName).' '
-                    .$this->quoteColumn($newName).' '
-                    .$matches[2][$i];
-                }
-            }
-        }
-
-        throw new Exception("Unable to find '$oldName' in table '$tableName'.");
     }
 
     /**

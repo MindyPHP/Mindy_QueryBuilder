@@ -71,8 +71,8 @@ class BuilderTest extends ConnectionAwareTest
             ['name__isnull', true, 'name IS NULL'],
             ['name__isnull', false, 'name IS NOT NULL'],
 
-            ['name__weekday', '1', 'EXTRACT(DOW FROM name::timestamp) = 2'],
-            ['name__weekday', '7', 'EXTRACT(DOW FROM name::timestamp) = 1'],
+            ['name__weekday', '1', 'EXTRACT(DOW FROM name::timestamp) = 1'],
+            ['name__weekday', '7', 'EXTRACT(DOW FROM name::timestamp) = 0'],
 
             ['name__regex', '1', 'name ~ 1'],
             ['name__iregex', '7', 'name ~* 7'],

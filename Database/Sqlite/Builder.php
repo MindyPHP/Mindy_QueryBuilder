@@ -25,7 +25,7 @@ class Builder extends AbstractBuilder
             return $this->expr->eq($x, $this->expr->literal($y, Type::INTEGER));
         }
 
-        return $this->expr->eq($x, $this->expr->literal($y, Type::INTEGER));
+        return $this->expr->eq($x, $this->expr->literal($y, Type::STRING));
     }
 
     protected function parseGte(string $x, $y): string
@@ -94,26 +94,6 @@ class Builder extends AbstractBuilder
             $x,
             $this->expr->literal('%'.$y, Type::STRING)
         );
-    }
-
-    protected function parseJson(string $x, $y): string
-    {
-        $result = [];
-        foreach ($y as $field => $value) {
-            list($name, $lookups) = $this->parse($field);
-            $first = current($lookups);
-
-            if ($this->isSupport($first)) {
-                $method = $this->formatMethod($first);
-
-                $result[] = call_user_func_array([$this, $method], [
-                    sprintf('JSON_EXTRACT(%s, $.%s)', $x, $name),
-                    $value,
-                ]);
-            }
-        }
-
-        return implode(' AND ', $result);
     }
 
     public function parseDay(string $x, $y): string
@@ -217,21 +197,7 @@ class Builder extends AbstractBuilder
 
     public function weekDay($x, $y)
     {
-        $y = (int) $y;
-        if ($y < 1 || $y > 7) {
-            throw new \LogicException('Incorrect day of week. Available range 0-6 where 0 - monday.');
-        }
-
-        /*
-         * %w - day of week 0-6 with Sunday==0
-         */
-        if (7 === $y) {
-            $y = 1;
-        } else {
-            $y += 1;
-        }
-
-        return $this->expr->eq('strftime(\'%w\', '.$x.')', $y);
+        return $this->expr->eq('strftime(\'%w\', '.$x.')', WeekDayFormat::format((int) $y));
     }
 
     public function regex($x, $y)

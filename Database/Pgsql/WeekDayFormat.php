@@ -30,6 +30,6 @@ class WeekDayFormat
             ));
         }
 
-        return $y === 7 ? 0 : $y + 1;
+        return $y === 7 ? 0 : $y;
     }
 }

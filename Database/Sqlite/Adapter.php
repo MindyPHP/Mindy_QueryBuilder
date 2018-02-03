@@ -15,9 +15,8 @@ use Exception;
 use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseAdapter;
 use Mindy\QueryBuilder\Exception\NotSupportedException;
-use Mindy\QueryBuilder\SQLGeneratorInterface;
 
-class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInterface
+class Adapter extends BaseAdapter
 {
     /**
      * Quotes a table name for use in a query.
@@ -56,138 +55,6 @@ class Adapter extends BaseAdapter implements AdapterInterface, SQLGeneratorInter
     public function getRandomOrder()
     {
         return 'RANDOM()';
-    }
-
-    /**
-     * @param $oldTableName
-     * @param $newTableName
-     *
-     * @return string
-     */
-    public function sqlRenameTable($oldTableName, $newTableName)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($oldTableName).' RENAME TO '.$this->quoteTableName($newTableName);
-    }
-
-    /**
-     * @param $tableName
-     * @param bool $cascade
-     *
-     * @return string
-     */
-    public function sqlTruncateTable($tableName, $cascade = false)
-    {
-        return 'DELETE FROM '.$this->quoteTableName($tableName);
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @return string
-     */
-    public function sqlDropIndex($tableName, $name)
-    {
-        return 'DROP INDEX '.$this->quoteColumn($name);
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlDropColumn($tableName, $column)
-    {
-        throw new NotSupportedException('not supported by SQLite');
-    }
-
-    /**
-     * @param $tableName
-     * @param $oldName
-     * @param $newName
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlRenameColumn($tableName, $oldName, $newName)
-    {
-        throw new NotSupportedException('not supported by SQLite');
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlDropForeignKey($tableName, $name)
-    {
-        throw new NotSupportedException('not supported by SQLite');
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     * @param $columns
-     * @param $refTable
-     * @param $refColumns
-     * @param null $delete
-     * @param null $update
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlAddForeignKey($tableName, $name, $columns, $refTable, $refColumns, $delete = null, $update = null)
-    {
-        throw new NotSupportedException('not supported by SQLite');
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlAlterColumn($tableName, $column, $type)
-    {
-        throw new NotSupportedException('not supported by SQLite');
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     * @param $columns
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlAddPrimaryKey($tableName, $name, $columns)
-    {
-        throw new NotSupportedException('not supported by SQLite');
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     *
-     * @throws Exception
-     *
-     * @return string
-     */
-    public function sqlDropPrimaryKey($tableName, $name)
-    {
-        throw new NotSupportedException('not supported by SQLite');
     }
 
     /**
