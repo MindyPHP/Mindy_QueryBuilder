@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 return [
     'mysql' => [
-        'wrapperClass' => 'Mindy\QueryBuilder\Connection',
         'dbname' => 'test',
         'user' => 'root',
         'password' => '',
@@ -20,7 +19,6 @@ return [
         'fixture' => __DIR__.'/../fixtures/mysql.sql',
     ],
     'pgsql' => [
-        'wrapperClass' => 'Mindy\QueryBuilder\Connection',
         'dbname' => 'test',
         'user' => 'test',
         'password' => '',
@@ -29,7 +27,6 @@ return [
         'fixture' => __DIR__.'/../fixtures/pgsql.sql',
     ],
     'sqlite' => [
-        'wrapperClass' => 'Mindy\QueryBuilder\Connection',
         'memory' => true,
 //        'path' => __DIR__ . '/sqlite.db',
         'driver' => 'pdo_sqlite',
