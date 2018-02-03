@@ -63,21 +63,9 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
     protected function lookupWeekDay(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = (int) $y;
-        if ($y < 1 || $y > 7) {
-            throw new \LogicException('Incorrect day of week. Available range 0-6 where 0 - monday.');
-        }
+        $y = WeekDayFormat::format($y);
 
-        /*
-         * %w - day of week 0-6 with Sunday==0
-         */
-        if (7 === $y) {
-            $y = 1;
-        } else {
-            $y += 1;
-        }
-
-        return "strftime('%w', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) ($y - 1));
+        return "strftime('%w', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupRange(AdapterInterface $adapter, string $x, $y): string

@@ -48,22 +48,9 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
     protected function lookupWeekDay(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = (int) $y;
-        if ($y < 1 || $y > 7) {
-            throw new \LogicException('Incorrect day of week. Available range 0-6 where 0 - monday.');
-        }
+        $y = WeekDayFormat::format($y);
 
-        /*
-        EXTRACT('dow' FROM timestamp)   0-6    Sunday=0
-        TO_CHAR(timestamp, 'D')         1-7    Sunday=1
-        */
-        if (7 === $y) {
-            $y = 1;
-        } else {
-            $y += 1;
-        }
-
-        return 'EXTRACT(DOW FROM '.$adapter->quoteColumn($x).'::timestamp) = '.$adapter->quoteValue((string) ($y - 1));
+        return 'EXTRACT(DOW FROM '.$adapter->quoteColumn($x).'::timestamp) = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupRegex(AdapterInterface $adapter, string $x, $y): string
@@ -128,5 +115,43 @@ class ExpressionBuilder extends BaseExpressionBuilder
         }
 
         return 'LOWER('.$adapter->quoteColumn($x).'::text) LIKE '.$adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8'));
+    }
+
+    protected function lookupJson(AdapterInterface $adapter, string $x, $y): string
+    {
+        $result = [];
+        foreach ($y as $field => $value) {
+            list($name, $lookups) = $this->parse($field);
+            $first = current($lookups);
+
+            if ($this->has($first)) {
+                $method = $this->formatMethod($first);
+
+                $castColumn = sprintf("%s ->> '%s'", $adapter->quoteColumn($x), $name);
+                switch ($first) {
+                    case 'exact':
+                        if (is_numeric($value)) {
+                            $castColumn = sprintf("(%s)::int", $castColumn);
+                        } else {
+                            $castColumn = sprintf("(%s)::text", $castColumn);
+                        }
+                        break;
+                    case 'gte':
+                    case 'gt':
+                    case 'lte':
+                    case 'lt':
+                        $castColumn = sprintf("(%s)::int", $castColumn);
+                        break;
+                }
+
+                $result[] = call_user_func_array([$this, $method], [
+                    $adapter,
+                    $castColumn,
+                    $value,
+                ]);
+            }
+        }
+
+        return implode(' AND ', $result);
     }
 }

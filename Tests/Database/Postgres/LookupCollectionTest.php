@@ -47,9 +47,12 @@ class LookupCollectionTest extends BaseTest
             ['year', 'name', 1, "EXTRACT(YEAR FROM \"name\"::timestamp) = '1'"],
             ['month', 'name', 1, "EXTRACT(MONTH FROM \"name\"::timestamp) = '1'"],
             ['day', 'name', 1, "EXTRACT(DAY FROM \"name\"::timestamp) = '1'"],
-            ['week_day', 'name', 1, "EXTRACT(DOW FROM \"name\"::timestamp) = '1'"],
-            ['week_day', 'name', 6, "EXTRACT(DOW FROM \"name\"::timestamp) = '6'"],
+            ['week_day', 'name', 1, "EXTRACT(DOW FROM \"name\"::timestamp) = '2'"],
+            ['week_day', 'name', 6, "EXTRACT(DOW FROM \"name\"::timestamp) = '7'"],
             ['week_day', 'name', 7, "EXTRACT(DOW FROM \"name\"::timestamp) = '0'"],
+            ['json', 'attrs', [], ''],
+            ['json', 'attrs', ['qty__gte' => 1, 'price__gt' => 100], '("attrs" ->> \'qty\')::int >= 1 AND ("attrs" ->> \'price\')::int > 100'],
+            ['json', 'attrs', ['name' => 'Joe'], '("attrs" ->> \'name\')::text = \'Joe\''],
         ];
     }
 
