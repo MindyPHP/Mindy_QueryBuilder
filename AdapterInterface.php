@@ -47,11 +47,11 @@ interface AdapterInterface
     public function getTimestamp($value = null);
 
     /**
-     * @param $column
+     * @param string $sql
      *
      * @return string
      */
-    public function quoteColumn($column);
+    public function quoteSql(string $sql): string;
 
     /**
      * @param $value
@@ -59,11 +59,4 @@ interface AdapterInterface
      * @return string
      */
     public function quoteValue($value);
-
-    /**
-     * @param $tableName
-     *
-     * @return string
-     */
-    public function quoteTableName($tableName);
 }

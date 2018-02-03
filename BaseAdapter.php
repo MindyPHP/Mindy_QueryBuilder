@@ -51,33 +51,6 @@ abstract class BaseAdapter implements AdapterInterface
     abstract public function getLookupCollection();
 
     /**
-     * Quotes a column name for use in a query.
-     * If the column name contains prefix, the prefix will also be properly quoted.
-     * If the column name is already quoted or contains '(', '[[' or '{{',
-     * then this method will do nothing.
-     *
-     * @param string $name column name
-     *
-     * @return string the properly quoted column name
-     *
-     * @see quoteSimpleColumnName()
-     */
-    public function quoteColumn($name)
-    {
-        if (false !== strpos($name, '(') || false !== strpos($name, '[[') || false !== strpos($name, '{{')) {
-            return $name;
-        }
-        if (false !== ($pos = strrpos($name, '.'))) {
-            $prefix = $this->quoteTableName(substr($name, 0, $pos)).'.';
-            $name = substr($name, $pos + 1);
-        } else {
-            $prefix = '';
-        }
-
-        return $prefix.$this->quoteSimpleColumnName($name);
-    }
-
-    /**
      * Quotes a simple column name for use in a query.
      * A simple column name should contain the column name only without any prefix.
      * If the column name is already quoted or is the asterisk character '*', this method will do nothing.
@@ -122,34 +95,6 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
-     * Quotes a table name for use in a query.
-     * If the table name contains schema prefix, the prefix will also be properly quoted.
-     * If the table name is already quoted or contains '(' or '{{',
-     * then this method will do nothing.
-     *
-     * @param string $name table name
-     *
-     * @return string the properly quoted table name
-     *
-     * @see quoteSimpleTableName()
-     */
-    public function quoteTableName($name)
-    {
-        if (false !== strpos($name, '(') || false !== strpos($name, '{{')) {
-            return $name;
-        }
-        if (false === strpos($name, '.')) {
-            return $this->quoteSimpleTableName($name);
-        }
-        $parts = explode('.', $name);
-        foreach ($parts as $i => $part) {
-            $parts[$i] = $this->quoteSimpleTableName($part);
-        }
-
-        return implode('.', $parts);
-    }
-
-    /**
      * Quotes a simple table name for use in a query.
      * A simple table name should contain the table name only without any schema prefix.
      * If the table name is already quoted, this method will do nothing.
@@ -163,7 +108,10 @@ abstract class BaseAdapter implements AdapterInterface
         return false !== strpos($name, "'") ? $name : "'".$name."'";
     }
 
-    public function quoteSql($sql)
+    /**
+     * {@inheritdoc}
+     */
+    public function quoteSql(string $sql): string
     {
         $tablePrefix = $this->tablePrefix;
 
@@ -173,10 +121,10 @@ abstract class BaseAdapter implements AdapterInterface
                 if (isset($matches[4])) {
                     return $this->quoteValue($this->convertToDbValue($matches[4]));
                 } elseif (isset($matches[3])) {
-                    return $this->quoteColumn($matches[3]);
+                    return $this->getQuotedName($matches[3]);
                 }
 
-                return str_replace('%', $tablePrefix, $this->quoteTableName($matches[2]));
+                return str_replace('%', $tablePrefix, $this->getQuotedName($matches[2]));
             },
             $sql
         );
@@ -231,10 +179,10 @@ abstract class BaseAdapter implements AdapterInterface
             } elseif (false !== strpos($column, 'AS')) {
                 if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $column, $matches)) {
                     list(, $rawColumn, $rawAlias) = $matches;
-                    $columns[$i] = $this->quoteColumn($rawColumn).' AS '.$this->quoteColumn($rawAlias);
+                    $columns[$i] = $this->getQuotedName($rawColumn).' AS '.$this->getQuotedName($rawAlias);
                 }
             } elseif (false === strpos($column, '(')) {
-                $columns[$i] = $this->quoteColumn($column);
+                $columns[$i] = $this->getQuotedName($column);
             }
         }
 
@@ -251,7 +199,7 @@ abstract class BaseAdapter implements AdapterInterface
     {
         if (isset($rows[0]) && is_array($rows)) {
             $columns = array_map(function ($column) {
-                return $this->quoteColumn($column);
+                return $this->getQuotedName($column);
             }, array_keys($rows[0]));
 
             $values = [];
@@ -276,12 +224,12 @@ abstract class BaseAdapter implements AdapterInterface
                 $values[] = '('.implode(', ', $record).')';
             }
 
-            $sql = 'INSERT INTO '.$this->quoteTableName($tableName).' ('.implode(', ', $columns).') VALUES '.implode(', ', $values);
+            $sql = 'INSERT INTO '.$this->getQuotedName($tableName).' ('.implode(', ', $columns).') VALUES '.implode(', ', $values);
 
             return $this->quoteSql($sql);
         }
         $columns = array_map(function ($column) {
-            return $this->quoteColumn($column);
+            return $this->getQuotedName($column);
         }, array_keys($rows));
 
         $values = array_map(function ($value) {
@@ -300,7 +248,7 @@ abstract class BaseAdapter implements AdapterInterface
             return $value;
         }, $rows);
 
-        $sql = 'INSERT INTO '.$this->quoteTableName($tableName).' ('.implode(', ', $columns).') VALUES ('.implode(', ', $values).')';
+        $sql = 'INSERT INTO '.$this->getQuotedName($tableName).' ('.implode(', ', $columns).') VALUES ('.implode(', ', $values).')';
 
         return $this->quoteSql($sql);
     }
@@ -324,10 +272,10 @@ abstract class BaseAdapter implements AdapterInterface
                     $val = $this->quoteValue($value);
                 }
             }
-            $parts[] = $this->quoteColumn($column).'='.$val;
+            $parts[] = $this->getQuotedName($column).'='.$val;
         }
 
-        return 'UPDATE '.$this->quoteTableName($tableName).' SET '.implode(', ', $parts);
+        return 'UPDATE '.$this->getQuotedName($tableName).' SET '.implode(', ', $parts);
     }
 
     /**
@@ -386,14 +334,14 @@ abstract class BaseAdapter implements AdapterInterface
             $cols = [];
             foreach ($columns as $name => $type) {
                 if (is_string($name)) {
-                    $cols[] = "\t".$this->quoteColumn($name).' '.$type;
+                    $cols[] = "\t".$this->getQuotedName($name).' '.$type;
                 } else {
                     $cols[] = "\t".$type;
                 }
             }
-            $sql = ($ifNotExists ? 'CREATE TABLE IF NOT EXISTS ' : 'CREATE TABLE ').$this->quoteTableName($tableName)." (\n".implode(",\n", $cols)."\n)";
+            $sql = ($ifNotExists ? 'CREATE TABLE IF NOT EXISTS ' : 'CREATE TABLE ').$this->getQuotedName($tableName)." (\n".implode(",\n", $cols)."\n)";
         } else {
-            $sql = ($ifNotExists ? 'CREATE TABLE IF NOT EXISTS ' : 'CREATE TABLE ').$this->quoteTableName($tableName).' '.$this->quoteSql($columns);
+            $sql = ($ifNotExists ? 'CREATE TABLE IF NOT EXISTS ' : 'CREATE TABLE ').$this->getQuotedName($tableName).' '.$this->quoteSql($columns);
         }
 
         return empty($options) ? $sql : $sql.' '.$options;
@@ -407,7 +355,7 @@ abstract class BaseAdapter implements AdapterInterface
      */
     public function sqlTruncateTable($tableName, $cascade = false)
     {
-        return 'TRUNCATE TABLE '.$this->quoteTableName($tableName);
+        return 'TRUNCATE TABLE '.$this->getQuotedName($tableName);
     }
 
     /**
@@ -486,18 +434,18 @@ abstract class BaseAdapter implements AdapterInterface
         } else {
             foreach ($on as $leftColumn => $rightColumn) {
                 if ($rightColumn instanceof Expression) {
-                    $onSQL[] = $this->quoteColumn($leftColumn).'='.$this->quoteSql($rightColumn->toSQL());
+                    $onSQL[] = $this->getQuotedName($leftColumn).'='.$this->quoteSql($rightColumn->toSQL());
                 } else {
-                    $onSQL[] = $this->quoteColumn($leftColumn).'='.$this->quoteColumn($rightColumn);
+                    $onSQL[] = $this->getQuotedName($leftColumn).'='.$this->getQuotedName($rightColumn);
                 }
             }
         }
 
         if (false !== strpos($tableName, 'SELECT')) {
-            return $joinType.' ('.$this->quoteSql($tableName).')'.(empty($alias) ? '' : ' AS '.$this->quoteColumn($alias)).' ON '.implode(',', $onSQL);
+            return $joinType.' ('.$this->quoteSql($tableName).')'.(empty($alias) ? '' : ' AS '.$this->getQuotedName($alias)).' ON '.implode(',', $onSQL);
         }
 
-        return $joinType.' '.$this->quoteTableName($tableName).(empty($alias) ? '' : ' AS '.$this->quoteColumn($alias)).' ON '.implode(',', $onSQL);
+        return $joinType.' '.$this->getQuotedName($tableName).(empty($alias) ? '' : ' AS '.$this->getQuotedName($alias)).' ON '.implode(',', $onSQL);
     }
 
     /**
@@ -585,14 +533,14 @@ abstract class BaseAdapter implements AdapterInterface
 
         if (is_string($columns)) {
             $quotedColumns = array_map(function ($column) {
-                return $this->quoteColumn($column);
+                return $this->getQuotedName($column);
             }, explode(',', $columns));
 
             return implode(', ', $quotedColumns);
         }
         $group = [];
         foreach ($columns as $column) {
-            $group[] = $this->quoteColumn($column);
+            $group[] = $this->getQuotedName($column);
         }
 
         return implode(', ', $group);
@@ -615,10 +563,10 @@ abstract class BaseAdapter implements AdapterInterface
             $quotedColumns = array_map(function ($column) {
                 $temp = explode(' ', $column);
                 if (2 == count($temp)) {
-                    return $this->quoteColumn($temp[0]).' '.$temp[1];
+                    return $this->getQuotedName($temp[0]).' '.$temp[1];
                 }
 
-                return $this->quoteColumn($column);
+                return $this->getQuotedName($column);
             }, $columns);
 
             return implode(', ', $quotedColumns);
@@ -638,10 +586,28 @@ abstract class BaseAdapter implements AdapterInterface
                 $column = $key;
             }
 
-            $order[] = $this->quoteColumn($column).' '.$direction;
+            $order[] = $this->getQuotedName($column).' '.$direction;
         }
 
         return implode(', ', $order).(empty($options) ? '' : ' '.$options);
+    }
+
+    /**
+     * // TODO move from here to expression builder
+     * @param string $str
+     * @return string
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    public function getQuotedName(string $str): string
+    {
+        $platform = $this->connection->getDatabasePlatform();
+        $keywords = $platform->getReservedKeywordsList();
+        $parts = explode(".", $str);
+        foreach ($parts as $k => $v) {
+            $parts[$k] = ($keywords->isKeyword($v)) ? $platform->quoteIdentifier($v) : $v;
+        }
+
+        return implode(".", $parts);
     }
 
     /**
@@ -680,9 +646,9 @@ abstract class BaseAdapter implements AdapterInterface
 
             if (!empty($subQuery)) {
                 if (false !== strpos($subQuery, 'SELECT')) {
-                    $value = '('.$subQuery.') AS '.$this->quoteColumn($column);
+                    $value = '('.$subQuery.') AS '.$this->getQuotedName($column);
                 } else {
-                    $value = $this->quoteColumn($subQuery).' AS '.$this->quoteColumn($column);
+                    $value = $this->getQuotedName($subQuery).' AS '.$this->getQuotedName($column);
                 }
             } else {
                 if (false === strpos($column, ',') && false !== strpos($column, 'AS')) {
@@ -693,7 +659,7 @@ abstract class BaseAdapter implements AdapterInterface
                         $rawAlias = '';
                     }
 
-                    $value = empty($rawAlias) ? $this->quoteColumn(trim($rawColumn)) : $this->quoteColumn(trim($rawColumn)).' AS '.$this->quoteColumn(trim($rawAlias));
+                    $value = empty($rawAlias) ? $this->getQuotedName(trim($rawColumn)) : $this->getQuotedName(trim($rawColumn)).' AS '.$this->getQuotedName(trim($rawAlias));
                 } elseif (false !== strpos($column, ',')) {
                     $newSelect = [];
                     foreach (explode(',', $column) as $item) {
@@ -708,11 +674,11 @@ abstract class BaseAdapter implements AdapterInterface
                             $rawAlias = '';
                         }
 
-                        $newSelect[] = empty($rawAlias) ? $this->quoteColumn(trim($rawColumn)) : $this->quoteColumn(trim($rawColumn)).' AS '.$this->quoteColumn(trim($rawAlias));
+                        $newSelect[] = empty($rawAlias) ? $this->getQuotedName(trim($rawColumn)) : $this->getQuotedName(trim($rawColumn)).' AS '.$this->getQuotedName(trim($rawAlias));
                     }
                     $value = implode(', ', $newSelect);
                 } else {
-                    $value = $this->quoteColumn($column);
+                    $value = $this->getQuotedName($column);
                 }
             }
             $select[] = $value;

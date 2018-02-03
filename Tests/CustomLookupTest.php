@@ -39,7 +39,7 @@ class LookupLibrary implements LookupCollectionInterface
     {
         switch ($lookup) {
             case 'foo':
-                return $adapter->quoteColumn($x).' ??? '.$adapter->quoteValue($y);
+                return $adapter->getQuotedName($x).' ??? '.$adapter->quoteValue($y);
 
             default:
                 throw new Exception('Unknown lookup: '.$lookup);
@@ -55,6 +55,6 @@ class CustomLookupTest extends BaseTest
         $qb->addLookupCollection(new LookupLibrary());
         list($lookup, $column, $value) = $qb->getLookupBuilder()->parseLookup($qb, 'name__foo', 1);
         $sql = $qb->getLookupBuilder()->runLookup($qb->getAdapter(), $lookup, $column, $value);
-        $this->assertEquals($sql, '`name` ??? 1');
+        $this->assertEquals($sql, 'name ??? 1');
     }
 }

@@ -849,19 +849,6 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param $tableName
-     * @param $columns
-     * @param null $options
-     * @param bool $ifNotExists
-     *
-     * @return string
-     */
-    public function createTable($tableName, $columns, $options = null, $ifNotExists = false)
-    {
-        return $this->getAdapter()->sqlCreateTable($tableName, $columns, $options, $ifNotExists);
-    }
-
-    /**
      * @param array|string|Q $where lookups
      *
      * @return $this
@@ -883,30 +870,6 @@ class QueryBuilder implements QueryBuilderInterface
         $this->_union[] = [$union, $all];
 
         return $this;
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     * @param $columns
-     *
-     * @return string
-     */
-    public function addPrimaryKey($tableName, $name, $columns)
-    {
-        return $this->getAdapter()->sqlAddPrimaryKey($tableName, $name, $columns);
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @return string
-     */
-    public function alterColumn($tableName, $column, $type)
-    {
-        return $this->getAdapter()->sqlAlterColumn($tableName, $column, $type);
     }
 
     /**
@@ -1033,10 +996,10 @@ class QueryBuilder implements QueryBuilderInterface
             $order = array_map(function ($column) {
                 $temp = explode(' ', $column);
                 if (2 == count($temp)) {
-                    return $this->getAdapter()->quoteColumn($temp[0]).' '.$temp[1];
+                    return $this->getAdapter()->getQuotedName($temp[0]).' '.$temp[1];
                 }
 
-                return $this->getAdapter()->quoteColumn($column);
+                return $this->getAdapter()->getQuotedName($column);
             }, $columns);
             $order = implode(', ', $order);
         } else {
@@ -1075,9 +1038,9 @@ class QueryBuilder implements QueryBuilderInterface
                 $tableRaw = $this->getAdapter()->getRawTableName($table);
             }
             if (false !== strpos($tableRaw, 'SELECT')) {
-                $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->quoteTableName($tableAlias));
+                $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->getQuotedName($tableAlias));
             } else {
-                $quotedTableNames[] = $this->getAdapter()->quoteTableName($tableRaw).(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->quoteTableName($tableAlias));
+                $quotedTableNames[] = $this->getAdapter()->getQuotedName($tableRaw).(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->getQuotedName($tableAlias));
             }
         }
 

@@ -43,18 +43,18 @@ class AdapterTest extends BaseTest
         $this->assertSame('OFFSET 10', $adapter->sqlLimitOffset(null, 10));
         $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
 
-        $this->assertSame('TRUNCATE TABLE "foo"', $adapter->sqlTruncateTable('foo', false));
+        $this->assertSame('TRUNCATE TABLE foo', $adapter->sqlTruncateTable('foo', false));
 
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
-        $this->assertSame('SELECT SETVAL("foo", 100, false)', $adapter->sqlResetSequence('foo', 100));
+        $this->assertSame('SELECT SETVAL(foo, 100, false)', $adapter->sqlResetSequence('foo', 100));
 
         $this->assertSame('SET CONSTRAINTS ALL IMMEDIATE', $adapter->sqlCheckIntegrity(true));
         $this->assertSame('SET CONSTRAINTS ALL DEFERRED', $adapter->sqlCheckIntegrity(false));
 
-        $this->assertSame('ALTER TABLE "bar"."foo" ENABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(true, 'foo', 'bar'));
-        $this->assertSame('ALTER TABLE "bar"."foo" ENABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(1, 'foo', 'bar'));
-        $this->assertSame('ALTER TABLE "bar"."foo" DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(false, 'foo', 'bar'));
-        $this->assertSame('ALTER TABLE "bar"."foo" DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(0, 'foo', 'bar'));
-        $this->assertSame('ALTER TABLE "bar"."foo" DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity('', 'foo', 'bar'));
+        $this->assertSame('ALTER TABLE bar.foo ENABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(true, 'foo', 'bar'));
+        $this->assertSame('ALTER TABLE bar.foo ENABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(1, 'foo', 'bar'));
+        $this->assertSame('ALTER TABLE bar.foo DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(false, 'foo', 'bar'));
+        $this->assertSame('ALTER TABLE bar.foo DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity(0, 'foo', 'bar'));
+        $this->assertSame('ALTER TABLE bar.foo DISABLE TRIGGER ALL', $adapter->sqlCheckIntegrity('', 'foo', 'bar'));
     }
 }

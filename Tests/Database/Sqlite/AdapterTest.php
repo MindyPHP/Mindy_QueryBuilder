@@ -37,7 +37,6 @@ class AdapterTest extends BaseTest
         $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
 
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
-        $this->assertSame('ALTER TABLE `foo` ADD COLUMN `bar` VARCHAR(255)', $adapter->sqlAddColumn('foo', 'bar', 'VARCHAR(255)'));
         $this->assertSame('UPDATE sqlite_sequence SET seq=100 WHERE name=\'foo\'', $adapter->sqlResetSequence('foo', 100));
 
         $this->assertSame('PRAGMA foreign_keys=1', $adapter->sqlCheckIntegrity(true));

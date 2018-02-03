@@ -46,7 +46,7 @@ class Adapter extends BaseAdapter
      */
     public function getLookupCollection()
     {
-        return new ExpressionBuilder();
+        return new ExpressionBuilder($this->connection);
     }
 
     public function getRandomOrder()
@@ -113,7 +113,7 @@ class Adapter extends BaseAdapter
      */
     public function sqlResetSequence($tableName, $value)
     {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' AUTO_INCREMENT='.(int) $value;
+        return 'ALTER TABLE '.$this->getQuotedName($tableName).' AUTO_INCREMENT='.(int) $value;
     }
 
     /**

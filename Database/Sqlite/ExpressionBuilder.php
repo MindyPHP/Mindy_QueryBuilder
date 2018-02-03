@@ -18,37 +18,37 @@ class ExpressionBuilder extends BaseExpressionBuilder
 {
     protected function lookupRegex(AdapterInterface $adapter, string $x, $y): string
     {
-        return $adapter->quoteColumn($x).' REGEXP '.$adapter->quoteValue('/'.$y.'/');
+        return $this->getQuotedName($x).' REGEXP '.$adapter->quoteValue('/'.$y.'/');
     }
 
     protected function lookupIregex(AdapterInterface $adapter, string $x, $y): string
     {
-        return $adapter->quoteColumn($x).' REGEXP '.$adapter->quoteValue('/'.$y.'/i');
+        return $this->getQuotedName($x).' REGEXP '.$adapter->quoteValue('/'.$y.'/i');
     }
 
     protected function lookupSecond(AdapterInterface $adapter, string $x, $y): string
     {
-        return "strftime('%S', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%S', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupYear(AdapterInterface $adapter, string $x, $y): string
     {
-        return "strftime('%Y', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%Y', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupMinute(AdapterInterface $adapter, string $x, $y): string
     {
-        return "strftime('%M', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%M', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupHour(AdapterInterface $adapter, string $x, $y): string
     {
-        return "strftime('%H', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%H', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupDay(AdapterInterface $adapter, string $x, $y): string
     {
-        return "strftime('%d', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%d', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupMonth(AdapterInterface $adapter, string $x, $y): string
@@ -58,20 +58,20 @@ class ExpressionBuilder extends BaseExpressionBuilder
             $y = '0'.(string) $y;
         }
 
-        return "strftime('%m', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%m', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupWeekDay(AdapterInterface $adapter, string $x, $y): string
     {
         $y = WeekDayFormat::format($y);
 
-        return "strftime('%w', ".$adapter->quoteColumn($x).') = '.$adapter->quoteValue((string) $y);
+        return "strftime('%w', ".$this->getQuotedName($x).') = '.$adapter->quoteValue((string) $y);
     }
 
     protected function lookupRange(AdapterInterface $adapter, string $x, $y): string
     {
         list($min, $max) = $y;
 
-        return $adapter->quoteColumn($x).' BETWEEN '.(int) $min.' AND '.(int) $max;
+        return $this->getQuotedName($x).' BETWEEN '.(int) $min.' AND '.(int) $max;
     }
 }

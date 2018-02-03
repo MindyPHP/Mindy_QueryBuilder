@@ -50,7 +50,7 @@ class Adapter extends BaseAdapter implements AdapterInterface
      */
     public function sqlResetSequence($sequenceName, $value)
     {
-        return 'SELECT SETVAL('.$this->quoteColumn($sequenceName).', '.$this->quoteValue($value).', false)';
+        return 'SELECT SETVAL('.$this->getQuotedName($sequenceName).', '.$this->quoteValue($value).', false)';
     }
 
     /**
@@ -70,8 +70,8 @@ class Adapter extends BaseAdapter implements AdapterInterface
 
         return sprintf(
                 'ALTER TABLE %s.%s %s TRIGGER ALL',
-                $this->quoteColumn($table),
-                $this->quoteColumn($schema),
+                $this->getQuotedName($table),
+                $this->getQuotedName($schema),
                 $check ? 'ENABLE' : 'DISABLE'
             );
     }
@@ -81,7 +81,7 @@ class Adapter extends BaseAdapter implements AdapterInterface
      */
     public function getLookupCollection()
     {
-        return new ExpressionBuilder();
+        return new ExpressionBuilder($this->connection);
     }
 
     /**

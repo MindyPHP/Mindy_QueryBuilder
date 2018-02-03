@@ -20,8 +20,8 @@ abstract class SchemaTest extends BaseTest
     public function testDistinct()
     {
         $qb = $this->getQueryBuilder();
-        $this->assertSql('SELECT * FROM [[profile]]', $qb->from('profile')->toSQL());
-        $this->assertSql('SELECT DISTINCT [[description]] FROM [[profile]]', $qb->select('description', true)->from('profile')->toSQL());
+        $this->assertSame('SELECT * FROM profile', $qb->from('profile')->toSQL());
+        $this->assertSame('SELECT DISTINCT description FROM profile', $qb->select('description', true)->from('profile')->toSQL());
     }
 
     public function testGetDateTime()

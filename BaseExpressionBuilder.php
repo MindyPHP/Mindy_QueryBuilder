@@ -11,8 +11,41 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder;
 
+use Doctrine\DBAL\Connection;
+
 class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectionInterface
 {
+    /**
+     * @var Connection
+     */
+    protected $connection;
+
+    /**
+     * BaseExpressionBuilder constructor.
+     * @param Connection $connection
+     */
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    /**
+     * @param string $str
+     * @return string
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    public function getQuotedName(string $str): string
+    {
+        $platform = $this->connection->getDatabasePlatform();
+        $keywords = $platform->getReservedKeywordsList();
+        $parts = explode(".", $str);
+        foreach ($parts as $k => $v) {
+            $parts[$k] = ($keywords->isKeyword($v)) ? $platform->quoteIdentifier($v) : $v;
+        }
+
+        return implode(".", $parts);
+    }
+
     public function parse(string $str): array
     {
         $lookups = explode('__', $str);
@@ -72,7 +105,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->eq(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $sqlValue
         );
     }
@@ -84,7 +117,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->gte(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue($y)
         );
     }
@@ -96,7 +129,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->gt(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue($y)
         );
     }
@@ -108,7 +141,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->lte(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue($y)
         );
     }
@@ -120,7 +153,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->lt(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue($y)
         );
     }
@@ -129,21 +162,21 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     {
         list($min, $max) = $y;
 
-        return $this->between($adapter->quoteColumn($x), [
-            $adapter->quoteValue($min),
-            $adapter->quoteValue($max),
-        ]);
+        return $this->between(
+            $this->getQuotedName($x),
+            [$adapter->quoteValue($min), $adapter->quoteValue($max)]
+        );
     }
 
     protected function lookupIsnt(AdapterInterface $adapter, string $x, $y): string
     {
         /** @var $adapter \Mindy\QueryBuilder\BaseAdapter */
         if (in_array($adapter->getSqlType($y), ['TRUE', 'FALSE', 'NULL'])) {
-            return $adapter->quoteColumn($x).' IS NOT '.$adapter->getSqlType($y);
+            return $this->getQuotedName($x).' IS NOT '.$adapter->getSqlType($y);
         }
 
         return $this->neq(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue($y)
         );
     }
@@ -151,10 +184,10 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     protected function lookupIsnull(AdapterInterface $adapter, string $x, $y): string
     {
         if ($y) {
-            return $this->isNull($adapter->quoteColumn($x));
+            return $this->isNull($this->getQuotedName($x));
         }
 
-        return $this->isNotNull($adapter->quoteColumn($x));
+        return $this->isNotNull($this->getQuotedName($x));
     }
 
     protected function lookupContains(AdapterInterface $adapter, string $x, $y): string
@@ -164,7 +197,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->like(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue('%'.$y.'%')
         );
     }
@@ -176,7 +209,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->like(
-            'LOWER('.$adapter->quoteColumn($x).')',
+            'LOWER('.$this->getQuotedName($x).')',
             $adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8').'%')
         );
     }
@@ -188,7 +221,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->like(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue((string) $y.'%')
         );
     }
@@ -200,7 +233,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->like(
-            'LOWER('.$adapter->quoteColumn($x).')',
+            'LOWER('.$this->getQuotedName($x).')',
             $adapter->quoteValue(mb_strtolower((string) $y, 'UTF-8').'%')
         );
     }
@@ -212,7 +245,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->like(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteValue('%'.(string) $y)
         );
     }
@@ -224,7 +257,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         }
 
         return $this->like(
-            'LOWER('.$adapter->quoteColumn($x).')',
+            'LOWER('.$this->getQuotedName($x).')',
             $adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8'))
         );
     }
@@ -236,14 +269,14 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
                 return $adapter->quoteValue($item);
             }, $y);
             $sqlValue = implode(', ', $quotedValues);
-        } elseif ($y instanceof QueryBuilder) {
+        } elseif ($y instanceof ToSqlInterface) {
             $sqlValue = $y->toSQL();
         } else {
-            $sqlValue = $adapter->quoteSql($y);
+            $sqlValue = $adapter->quoteSql((string)$y);
         }
 
         return $this->in(
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $sqlValue
         );
     }
@@ -252,7 +285,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     {
         return sprintf(
             '%s %s',
-            $adapter->quoteColumn($x),
+            $this->getQuotedName($x),
             $adapter->quoteSql($y)
         );
     }

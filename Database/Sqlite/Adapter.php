@@ -46,7 +46,7 @@ class Adapter extends BaseAdapter
 
     public function getLookupCollection()
     {
-        return new ExpressionBuilder();
+        return new ExpressionBuilder($this->connection);
     }
 
     /**
@@ -106,18 +106,6 @@ class Adapter extends BaseAdapter
     public function getDate($value = null)
     {
         return $this->formatDateTime($value, 'Y-m-d');
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @return string
-     */
-    public function sqlAddColumn($tableName, $column, $type)
-    {
-        return 'ALTER TABLE '.$this->quoteTableName($tableName).' ADD COLUMN '.$this->quoteColumn($column).' '.$type;
     }
 
     /**
