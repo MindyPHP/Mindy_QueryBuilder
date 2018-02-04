@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Database\Mysql;
 
 use Mindy\QueryBuilder\AdapterInterface;
-use Mindy\QueryBuilder\BaseExpressionBuilder;
+use Mindy\QueryBuilder\ExpressionBuilder as BaseExpressionBuilder;
 
 class ExpressionBuilder extends BaseExpressionBuilder
 {

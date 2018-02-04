@@ -27,9 +27,6 @@ class AdapterTest extends BaseTest
         $adapter = $this->getAdapter();
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
 
-        $this->assertSame('true', $adapter->getBoolean(1));
-        $this->assertSame('false', $adapter->getBoolean(0));
-
         $this->assertSame("'1'", $adapter->getSqlType(1));
         $this->assertSame('true', $adapter->getSqlType(true));
         $this->assertSame('false', $adapter->getSqlType(false));

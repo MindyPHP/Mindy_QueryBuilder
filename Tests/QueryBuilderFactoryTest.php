@@ -14,7 +14,7 @@ namespace Mindy\QueryBuilder\Tests;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
+use Mindy\QueryBuilder\LookupBuilder;
 use Mindy\QueryBuilder\QueryBuilder;
 use Mindy\QueryBuilder\QueryBuilderFactory;
 

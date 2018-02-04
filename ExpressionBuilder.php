@@ -11,273 +11,358 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder;
 
-use Doctrine\DBAL\Query\Expression\CompositeExpression;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Types\Type;
 
-/**
- * Class ExpressionBuilder
- */
-class ExpressionBuilder
+class ExpressionBuilder extends ConditionBuilder implements LookupCollectionInterface
 {
-    const EQ = '=';
-    const NEQ = '<>';
-    const LT = '<';
-    const LTE = '<=';
-    const GT = '>';
-    const GTE = '>=';
+    /**
+     * @var Connection
+     */
+    protected $connection;
 
     /**
-     * Creates a conjunction of the given boolean expressions.
+     * BaseExpressionBuilder constructor.
      *
-     * Example:
-     *
-     *     [php]
-     *     // (u.type = ?) AND (u.role = ?)
-     *     $expr->andX('u.type = ?', 'u.role = ?'));
-     *
-     * @param mixed $x Optional clause. Defaults = null, but requires
-     *                 at least one defined when converting to string.
-     *
-     * @return \Doctrine\DBAL\Query\Expression\CompositeExpression
+     * @param Connection $connection
      */
-    public function andX($x = null): CompositeExpression
+    public function __construct(Connection $connection)
     {
-        return new CompositeExpression(CompositeExpression::TYPE_AND, func_get_args());
+        $this->connection = $connection;
     }
 
     /**
-     * Creates a disjunction of the given boolean expressions.
+     * @param $value
+     * @param string $type
      *
-     * Example:
+     * @throws \Doctrine\DBAL\DBALException
      *
-     *     [php]
-     *     // (u.type = ?) OR (u.role = ?)
-     *     $qb->where($qb->expr()->orX('u.type = ?', 'u.role = ?'));
-     *
-     * @param mixed $x Optional clause. Defaults = null, but requires
-     *                 at least one defined when converting to string.
-     *
-     * @return \Doctrine\DBAL\Query\Expression\CompositeExpression
+     * @return mixed
      */
-    public function orX($x = null): CompositeExpression
+    protected function castToType($value, string $type)
     {
-        return new CompositeExpression(CompositeExpression::TYPE_OR, func_get_args());
+        $platform = $this->connection->getDatabasePlatform();
+
+        return Type::getType($type)->convertToDatabaseValue($value, $platform);
     }
 
     /**
-     * Creates a comparison expression.
+     * @param $value
      *
-     * @param mixed  $x        the left expression
-     * @param string $operator one of the ExpressionBuilder::* constants
-     * @param mixed  $y        the right expression
+     * @return \DateTime
+     */
+    public function formatDateTime($value): \DateTime
+    {
+        if ($value instanceof \DateTime) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            $date = new \DateTime();
+            $date->setTimestamp((int) $value);
+
+            return $date;
+        } elseif (null === $value) {
+            return new \DateTime();
+        }
+
+        return new \DateTime($value);
+    }
+
+    /**
+     * @param $y
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return mixed|null
+     */
+    protected function castToDatabaseValue($y)
+    {
+        if ($y instanceof \DateTime) {
+            return $this->castToDateTime($y);
+        } elseif ('boolean' === gettype($y)) {
+            return $this->castToType($y, Type::BOOLEAN);
+        } elseif (is_numeric($y)) {
+            return $this->castToType($y, Type::INTEGER);
+        }
+
+        return $this->castToType($y, Type::STRING);
+    }
+
+    protected function castToDate($value)
+    {
+        return $this->castToType($this->formatDateTime($value), Type::DATE);
+    }
+
+    protected function castToDateTime($value)
+    {
+        return $this->castToType($this->formatDateTime($value), Type::DATETIME);
+    }
+
+    /**
+     * @param string $str
+     *
+     * @throws \Doctrine\DBAL\DBALException
      *
      * @return string
      */
-    public function comparison($x, $operator, $y): string
+    public function getQuotedName(string $str): string
     {
-        return $x.' '.$operator.' '.$y;
+        $platform = $this->connection->getDatabasePlatform();
+        $keywords = $platform->getReservedKeywordsList();
+        $parts = explode('.', $str);
+        foreach ($parts as $k => $v) {
+            $parts[$k] = ($keywords->isKeyword($v)) ? $platform->quoteIdentifier($v) : $v;
+        }
+
+        return implode('.', $parts);
+    }
+
+    public function parse(string $str): array
+    {
+        $lookups = explode('__', $str);
+        $column = array_shift($lookups);
+        if (0 == count($lookups)) {
+            $lookups[] = 'exact';
+        }
+
+        return [$column, $lookups];
+    }
+
+    protected function formatMethod(string $lookup): string
+    {
+        $toCamelCase = lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $lookup))));
+
+        return sprintf('lookup%s', $toCamelCase);
     }
 
     /**
-     * Creates an equality comparison expression with the given arguments.
-     *
-     * First argument is considered the left expression and the second is the right expression.
-     * When converted to string, it will generated a <left expr> = <right expr>. Example:
-     *
-     *     [php]
-     *     // u.id = ?
-     *     $expr->eq('u.id', '?');
-     *
-     * @param mixed $x the left expression
-     * @param mixed $y the right expression
-     *
-     * @return string
+     * {@inheritdoc}
      */
-    public function eq($x, $y): string
+    public function has(string $lookup): bool
     {
-        return $this->comparison($x, self::EQ, $y);
+        return method_exists($this, $this->formatMethod($lookup));
     }
 
     /**
-     * Creates a non equality comparison expression with the given arguments.
-     * First argument is considered the left expression and the second is the right expression.
-     * When converted to string, it will generated a <left expr> <> <right expr>. Example:
-     *
-     *     [php]
-     *     // u.id <> 1
-     *     $q->where($q->expr()->neq('u.id', '1'));
-     *
-     * @param mixed $x the left expression
-     * @param mixed $y the right expression
-     *
-     * @return string
+     * {@inheritdoc}
      */
-    public function neq($x, $y): string
+    public function process(AdapterInterface $adapter, $lookup, $x, $y)
     {
-        return $this->comparison($x, self::NEQ, $y);
+        if (false === $this->has($lookup)) {
+            throw new \RuntimeException(sprintf(
+                'Unsupported lookup: %s',
+                $lookup
+            ));
+        }
+
+        return call_user_func_array([$this, $this->formatMethod($lookup)], [$adapter, $x, $y]);
+    }
+
+    protected function lookupExact(AdapterInterface $adapter, string $x, $y): string
+    {
+        $y = $this->castToDatabaseValue($y);
+
+        if ($y instanceof Expression) {
+            $sqlValue = $y->toSQL();
+        } elseif ($y instanceof ToSqlInterface) {
+            $sqlValue = '('.$y->toSQL().')';
+        } elseif (false !== strpos((string) $y, 'SELECT')) {
+            $sqlValue = '('.$y.')';
+        } else {
+            $sqlValue = $this->literal($y);
+        }
+
+        return $this->eq(
+            $this->getQuotedName($x),
+            $sqlValue
+        );
+    }
+
+    protected function lookupGte(AdapterInterface $adapter, string $x, $y): string
+    {
+        $y = $this->castToDatabaseValue($y);
+
+        return $this->gte(
+            $this->getQuotedName($x),
+            $this->literal($y)
+        );
+    }
+
+    protected function lookupGt(AdapterInterface $adapter, string $x, $y): string
+    {
+        $y = $this->castToDatabaseValue($y);
+
+        return $this->gt(
+            $this->getQuotedName($x),
+            $this->literal($y)
+        );
+    }
+
+    protected function lookupLte(AdapterInterface $adapter, string $x, $y): string
+    {
+        $y = $this->castToDatabaseValue($y);
+
+        return $this->lte(
+            $this->getQuotedName($x),
+            $this->literal($y)
+        );
+    }
+
+    protected function lookupLt(AdapterInterface $adapter, string $x, $y): string
+    {
+        $y = $this->castToDatabaseValue($y);
+
+        return $this->lt(
+            $this->getQuotedName($x),
+            $this->literal($y)
+        );
+    }
+
+    protected function lookupRange(AdapterInterface $adapter, string $x, $y): string
+    {
+        list($min, $max) = $y;
+        $minValue = $this->castToDatabaseValue($min);
+        $maxValue = $this->castToDatabaseValue($max);
+
+        return $this->between(
+            $this->getQuotedName($x),
+            [
+                $this->literal($minValue),
+                $this->literal($maxValue),
+            ]
+        );
+    }
+
+    protected function lookupIsnt(AdapterInterface $adapter, string $x, $y): string
+    {
+        /** @var $adapter \Mindy\QueryBuilder\BaseAdapter */
+        if (in_array($adapter->getSqlType($y), ['TRUE', 'FALSE', 'NULL'])) {
+            return $this->getQuotedName($x).' IS NOT '.$adapter->getSqlType($y);
+        }
+
+        return $this->neq(
+            $this->getQuotedName($x),
+            $this->literal($y)
+        );
+    }
+
+    protected function lookupIsnull(AdapterInterface $adapter, string $x, $y): string
+    {
+        if ($y) {
+            return $this->isNull($this->getQuotedName($x));
+        }
+
+        return $this->isNotNull($this->getQuotedName($x));
+    }
+
+    protected function lookupContains(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_bool($y)) {
+            $y = (int) $y;
+        }
+
+        return $this->like(
+            $this->getQuotedName($x),
+            $this->literal('%'.$y.'%')
+        );
+    }
+
+    protected function lookupIcontains(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_bool($y)) {
+            $y = (int) $y;
+        }
+
+        return $this->like(
+            'LOWER('.$this->getQuotedName($x).')',
+            $this->literal('%'.mb_strtolower((string) $y, 'UTF-8').'%')
+        );
+    }
+
+    protected function lookupStartswith(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_bool($y)) {
+            $y = (int) $y;
+        }
+
+        return $this->like(
+            $this->getQuotedName($x),
+            $this->literal((string) $y.'%')
+        );
+    }
+
+    protected function lookupIstartswith(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_bool($y)) {
+            $y = (int) $y;
+        }
+
+        return $this->like(
+            'LOWER('.$this->getQuotedName($x).')',
+            $this->literal(mb_strtolower((string) $y, 'UTF-8').'%')
+        );
+    }
+
+    protected function lookupEndswith(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_bool($y)) {
+            $y = (int) $y;
+        }
+
+        return $this->like(
+            $this->getQuotedName($x),
+            $this->literal('%'.(string) $y)
+        );
+    }
+
+    protected function lookupIendswith(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_bool($y)) {
+            $y = (int) $y;
+        }
+
+        return $this->like(
+            'LOWER('.$this->getQuotedName($x).')',
+            $this->literal('%'.mb_strtolower((string) $y, 'UTF-8'))
+        );
+    }
+
+    protected function lookupIn(AdapterInterface $adapter, string $x, $y): string
+    {
+        if (is_array($y)) {
+            $quotedValues = array_map(function ($item) use ($adapter) {
+                return $this->literal($item);
+            }, $y);
+            $sqlValue = implode(', ', $quotedValues);
+        } elseif ($y instanceof ToSqlInterface) {
+            $sqlValue = $y->toSQL();
+        } else {
+            $sqlValue = $adapter->quoteSql((string) $y);
+        }
+
+        return $this->in(
+            $this->getQuotedName($x),
+            $sqlValue
+        );
     }
 
     /**
-     * Creates a lower-than comparison expression with the given arguments.
-     * First argument is considered the left expression and the second is the right expression.
-     * When converted to string, it will generated a <left expr> < <right expr>. Example:
+     * Quotes a given input parameter.
      *
-     *     [php]
-     *     // u.id < ?
-     *     $q->where($q->expr()->lt('u.id', '?'));
-     *
-     * @param mixed $x the left expression
-     * @param mixed $y the right expression
+     * @param mixed       $input the parameter to be quoted
+     * @param string|null $type  the type of the parameter
      *
      * @return string
      */
-    public function lt($x, $y): string
+    public function literal($input, $type = null)
     {
-        return $this->comparison($x, self::LT, $y);
-    }
+        // TODO remove
+        if (!is_string($input)) {
+            return $input;
+        }
+        // TODO remove
 
-    /**
-     * Creates a lower-than-equal comparison expression with the given arguments.
-     * First argument is considered the left expression and the second is the right expression.
-     * When converted to string, it will generated a <left expr> <= <right expr>. Example:
-     *
-     *     [php]
-     *     // u.id <= ?
-     *     $q->where($q->expr()->lte('u.id', '?'));
-     *
-     * @param mixed $x the left expression
-     * @param mixed $y the right expression
-     *
-     * @return string
-     */
-    public function lte($x, $y): string
-    {
-        return $this->comparison($x, self::LTE, $y);
-    }
-
-    /**
-     * Creates a greater-than comparison expression with the given arguments.
-     * First argument is considered the left expression and the second is the right expression.
-     * When converted to string, it will generated a <left expr> > <right expr>. Example:
-     *
-     *     [php]
-     *     // u.id > ?
-     *     $q->where($q->expr()->gt('u.id', '?'));
-     *
-     * @param mixed $x the left expression
-     * @param mixed $y the right expression
-     *
-     * @return string
-     */
-    public function gt($x, $y): string
-    {
-        return $this->comparison($x, self::GT, $y);
-    }
-
-    /**
-     * Creates a greater-than-equal comparison expression with the given arguments.
-     * First argument is considered the left expression and the second is the right expression.
-     * When converted to string, it will generated a <left expr> >= <right expr>. Example:
-     *
-     *     [php]
-     *     // u.id >= ?
-     *     $q->where($q->expr()->gte('u.id', '?'));
-     *
-     * @param mixed $x the left expression
-     * @param mixed $y the right expression
-     *
-     * @return string
-     */
-    public function gte($x, $y): string
-    {
-        return $this->comparison($x, self::GTE, $y);
-    }
-
-    /**
-     * Creates an IS NULL expression with the given arguments.
-     *
-     * @param string $x the field in string format to be restricted by IS NULL
-     *
-     * @return string
-     */
-    public function isNull($x): string
-    {
-        return $x.' IS NULL';
-    }
-
-    /**
-     * Creates an IS NOT NULL expression with the given arguments.
-     *
-     * @param string $x the field in string format to be restricted by IS NOT NULL
-     *
-     * @return string
-     */
-    public function isNotNull($x): string
-    {
-        return $x.' IS NOT NULL';
-    }
-
-    /**
-     * Creates a LIKE() comparison expression with the given arguments.
-     *
-     * @param string $x field in string format to be inspected by LIKE() comparison
-     * @param mixed  $y argument to be used in LIKE() comparison
-     *
-     * @return string
-     */
-    public function like($x, $y): string
-    {
-        return $this->comparison($x, 'LIKE', $y);
-    }
-
-    /**
-     * Creates a NOT LIKE() comparison expression with the given arguments.
-     *
-     * @param string $x field in string format to be inspected by NOT LIKE() comparison
-     * @param mixed  $y argument to be used in NOT LIKE() comparison
-     *
-     * @return string
-     */
-    public function notLike($x, $y): string
-    {
-        return $this->comparison($x, 'NOT LIKE', $y);
-    }
-
-    /**
-     * Creates a IN () comparison expression with the given arguments.
-     *
-     * @param string       $x the field in string format to be inspected by IN() comparison
-     * @param string|array $y the placeholder or the array of values to be used by IN() comparison
-     *
-     * @return string
-     */
-    public function in($x, $y): string
-    {
-        return $this->comparison($x, 'IN', '('.implode(', ', (array) $y).')');
-    }
-
-    /**
-     * Creates a NOT IN () comparison expression with the given arguments.
-     *
-     * @param string       $x the field in string format to be inspected by NOT IN() comparison
-     * @param string|array $y the placeholder or the array of values to be used by NOT IN() comparison
-     *
-     * @return string
-     */
-    public function notIn($x, $y): string
-    {
-        return $this->comparison($x, 'NOT IN', '('.implode(', ', (array) $y).')');
-    }
-
-    /**
-     * Creates a BETWEEN () comparison expression with the given arguments.
-     *
-     * @param string       $x the field in string format to be inspected by BETWEEN comparison
-     * @param string|array $y the placeholder or the array of values to be used by BETWEEN comparison
-     *
-     * @return string
-     */
-    public function between($x, $y): string
-    {
-        return $this->comparison($x, 'BETWEEN', implode(' AND ', $y));
+        return $this->connection->quote($input, $type);
     }
 }

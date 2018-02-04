@@ -17,6 +17,7 @@ class WeekDayFormat
      * %w - day of week 0-6 with Sunday==0
      *
      * @param int $y
+     *
      * @return int
      */
     public static function format(int $y): int
@@ -28,6 +29,6 @@ class WeekDayFormat
             ));
         }
 
-        return $y === 7 ? 0 : $y;
+        return 7 === $y ? 0 : $y;
     }
 }

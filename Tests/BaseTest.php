@@ -11,10 +11,7 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Tests;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
 use Mindy\QueryBuilder\QueryBuilder;
-use PHPUnit\Framework\TestCase;
 
 abstract class BaseTest extends ConnectionAwareTest
 {

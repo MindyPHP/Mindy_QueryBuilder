@@ -19,13 +19,6 @@ interface AdapterInterface
     public function getRandomOrder();
 
     /**
-     * @param $value
-     *
-     * @return string
-     */
-    public function getBoolean($value = null);
-
-    /**
      * @param string $sql
      *
      * @return string

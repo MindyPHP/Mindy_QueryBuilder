@@ -33,10 +33,10 @@ class LookupCollectionTest extends BaseTest
             ['gt', 'name', new \DateTime(), sprintf("name > '%s'", date('Y-m-d H:i:s'))],
 
             // Test integer
-            ['gte', 'name', 1, "name >= 1"],
-            ['lte', 'name', 1, "name <= 1"],
-            ['lt', 'name', 1, "name < 1"],
-            ['gt', 'name', 1, "name > 1"],
+            ['gte', 'name', 1, 'name >= 1'],
+            ['lte', 'name', 1, 'name <= 1'],
+            ['lt', 'name', 1, 'name < 1'],
+            ['gt', 'name', 1, 'name > 1'],
 
             ['range', 'name', [1, 2], 'name BETWEEN 1 AND 2'],
 
@@ -80,8 +80,8 @@ class LookupCollectionTest extends BaseTest
             ['json', 'attributes', ['name__istartswith' => 'bar'], "LOWER(JSON_EXTRACT(attributes, '$.name')) LIKE 'bar%'"],
             ['json', 'attributes', ['name__endswith' => 'bar'], "JSON_EXTRACT(attributes, '$.name') LIKE '%bar'"],
             ['json', 'attributes', ['name__iendswith' => 'bar'], "LOWER(JSON_EXTRACT(attributes, '$.name')) LIKE '%bar'"],
-            ['json', 'attributes', ['name__in' => [1,2,3]], "JSON_EXTRACT(attributes, '$.name') IN (1, 2, 3)"],
-            ['json', 'attributes', ['name__range' => [1,2]], "JSON_EXTRACT(attributes, '$.name') BETWEEN 1 AND 2"],
+            ['json', 'attributes', ['name__in' => [1, 2, 3]], "JSON_EXTRACT(attributes, '$.name') IN (1, 2, 3)"],
+            ['json', 'attributes', ['name__range' => [1, 2]], "JSON_EXTRACT(attributes, '$.name') BETWEEN 1 AND 2"],
             ['json', 'attributes', ['name__isnull' => false], "JSON_EXTRACT(attributes, '$.name') IS NOT NULL"],
         ];
     }

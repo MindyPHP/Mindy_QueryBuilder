@@ -12,10 +12,6 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Types\Type;
-use Mindy\QueryBuilder\Aggregation\Aggregation;
-use Mindy\QueryBuilder\Q\Q;
-use Mindy\QueryBuilder\Utils\TableNameResolver;
 
 abstract class BaseAdapter implements AdapterInterface
 {
@@ -39,7 +35,7 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
-     * @return BaseExpressionBuilder|LookupCollectionInterface
+     * @return ExpressionBuilder|LookupCollectionInterface
      */
     abstract public function getLookupCollection();
 
@@ -52,7 +48,7 @@ abstract class BaseAdapter implements AdapterInterface
         $tablePrefix = $this->tablePrefix;
 
         return preg_replace_callback(
-            '/(\\{\\{(%?[\w\-\. ]+%?)\\}\\}|\\[\\[([\w\-\. ]+)\\]\\])|\\@([\w\-\. \/\%\:]+)\\@/',
+            '/(\\[\\[([\w\-\. ]+)\\]\\]|\\@([\w\-\. \/\%\:]+)\\@)/',
             function ($matches) use ($tablePrefix) {
                 if (isset($matches[4])) {
                     return $this->connection->quote($this->getSqlType($matches[4]));
@@ -73,8 +69,8 @@ abstract class BaseAdapter implements AdapterInterface
      */
     public function getSqlType($value)
     {
-        if (gettype($value) === 'boolean') {
-            return $this->getBoolean($value);
+        if ('boolean' === gettype($value)) {
+            return $this->connection->getDatabasePlatform()->convertBooleans($value);
         } elseif (null === $value || 'null' === $value) {
             return 'NULL';
         }
@@ -88,16 +84,6 @@ abstract class BaseAdapter implements AdapterInterface
     abstract public function getRandomOrder();
 
     /**
-     * @param $value
-     *
-     * @return string
-     */
-    public function getBoolean($value = null)
-    {
-        return $this->connection->getDatabasePlatform()->convertBooleans($value);
-    }
-
-    /**
      * @param bool   $check
      * @param string $schema
      * @param string $table
@@ -108,19 +94,22 @@ abstract class BaseAdapter implements AdapterInterface
 
     /**
      * // TODO move from here to expression builder
+     *
      * @param string $str
-     * @return string
+     *
      * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
      */
     public function getQuotedName($str): string
     {
         $platform = $this->connection->getDatabasePlatform();
         $keywords = $platform->getReservedKeywordsList();
-        $parts = explode(".", (string)$str);
+        $parts = explode('.', (string) $str);
         foreach ($parts as $k => $v) {
             $parts[$k] = ($keywords->isKeyword($v)) ? $platform->quoteIdentifier($v) : $v;
         }
 
-        return implode(".", $parts);
+        return implode('.', $parts);
     }
 }

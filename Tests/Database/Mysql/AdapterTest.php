@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Tests\Database\Mysql;
 
-use Doctrine\DBAL\Schema\Table;
 use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\Database\Mysql\Adapter;
 use Mindy\QueryBuilder\Tests\BaseTest;

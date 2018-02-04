@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Tests;
 
 use Mindy\QueryBuilder\Database\Sqlite\ExpressionBuilder;
-use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
+use Mindy\QueryBuilder\LookupBuilder;
 
 class LookupBuilderTest extends BaseTest
 {
@@ -42,7 +42,6 @@ class LookupBuilderTest extends BaseTest
             [['id__iendswith' => 'FOO'], 'LOWER(id) LIKE \'%foo\''],
             [['id__in' => [1, 2, 'test']], 'id IN (1, 2, \'test\')'],
             [['id__in' => 'SELECT id FROM test'], 'id IN (SELECT id FROM test)'],
-            [['id__raw' => '?? qwe'], 'id ?? qwe'],
         ];
     }
 

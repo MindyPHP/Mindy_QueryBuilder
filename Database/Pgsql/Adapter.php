@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Pgsql;
 
-use Exception;
 use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseAdapter;
 

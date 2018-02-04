@@ -42,7 +42,7 @@ class LookupCollectionTest extends BaseTest
             ['week_day', 'name', 1, "strftime('%w', name) = '1'"],
             ['week_day', 'name', 7, "strftime('%w', name) = '0'"],
 
-            ['gte', 'created_at', new \DateTime('2016-07-22 13:54:09'), 'created_at >= \'2016-07-22 13:54:09\'']
+            ['gte', 'created_at', new \DateTime('2016-07-22 13:54:09'), 'created_at >= \'2016-07-22 13:54:09\''],
         ];
     }
 

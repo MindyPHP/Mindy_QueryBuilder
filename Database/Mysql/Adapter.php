@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Mysql;
 
-use Doctrine\DBAL\Types\Type;
 use Mindy\QueryBuilder\BaseAdapter;
 
 class Adapter extends BaseAdapter
@@ -26,7 +25,7 @@ class Adapter extends BaseAdapter
      */
     public function quoteSimpleTableName($name)
     {
-        return false !== strpos($name, '`') ? $name : '`' . $name . '`';
+        return false !== strpos($name, '`') ? $name : '`'.$name.'`';
     }
 
     /**
@@ -39,7 +38,7 @@ class Adapter extends BaseAdapter
      */
     public function quoteSimpleColumnName($name)
     {
-        return false !== strpos($name, '`') || '*' === $name ? $name : '`' . $name . '`';
+        return false !== strpos($name, '`') || '*' === $name ? $name : '`'.$name.'`';
     }
 
     /**
@@ -56,7 +55,7 @@ class Adapter extends BaseAdapter
     }
 
     /**
-     * @param bool $check
+     * @param bool   $check
      * @param string $schema
      * @param string $table
      *
@@ -64,6 +63,6 @@ class Adapter extends BaseAdapter
      */
     public function sqlCheckIntegrity($check = true, $schema = '', $table = '')
     {
-        return 'SET FOREIGN_KEY_CHECKS = ' . $this->getBoolean($check);
+        return 'SET FOREIGN_KEY_CHECKS = '.($check ? 1 : 0);
     }
 }

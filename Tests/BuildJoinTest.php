@@ -14,7 +14,7 @@ namespace Mindy\QueryBuilder\Tests;
 use Mindy\QueryBuilder\Aggregation\Max;
 use Mindy\QueryBuilder\Aggregation\Min;
 use Mindy\QueryBuilder\Expression;
-use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
+use Mindy\QueryBuilder\LookupBuilder;
 use Mindy\QueryBuilder\QueryBuilder;
 
 class BuildJoinCallback

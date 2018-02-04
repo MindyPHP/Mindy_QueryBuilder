@@ -11,10 +11,7 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Database\Sqlite;
 
-use Exception;
-use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\BaseAdapter;
-use Mindy\QueryBuilder\Exception\NotSupportedException;
 
 class Adapter extends BaseAdapter
 {
@@ -66,6 +63,6 @@ class Adapter extends BaseAdapter
      */
     public function sqlCheckIntegrity($check = true, $schema = '', $table = '')
     {
-        return 'PRAGMA foreign_keys='.$this->getBoolean($check);
+        return 'PRAGMA foreign_keys='.($check ? 1 : 0);
     }
 }

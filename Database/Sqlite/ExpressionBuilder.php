@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder\Database\Sqlite;
 
 use Mindy\QueryBuilder\AdapterInterface;
-use Mindy\QueryBuilder\BaseExpressionBuilder;
+use Mindy\QueryBuilder\ExpressionBuilder as BaseExpressionBuilder;
 
 class ExpressionBuilder extends BaseExpressionBuilder
 {
@@ -93,7 +93,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->eq(
             "strftime('%w', ".$this->getQuotedName($x).')',
-            $this->literal((string)$y)
+            $this->literal((string) $y)
         );
     }
 

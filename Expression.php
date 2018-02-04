@@ -20,6 +20,7 @@ class Expression implements ToSqlInterface
 
     /**
      * Expression constructor.
+     *
      * @param $expression
      */
     public function __construct($expression)
