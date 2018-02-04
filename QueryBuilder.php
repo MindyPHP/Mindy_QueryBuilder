@@ -31,30 +31,6 @@ class QueryBuilder implements QueryBuilderInterface
     protected $type = self::SELECT;
 
     /**
-     * @var array|Q|string
-     */
-    private $_whereAnd = [];
-    /**
-     * @var array|Q|string
-     */
-    private $_whereOr = [];
-    /**
-     * @var array|string
-     */
-    private $_order = [];
-    /**
-     * @var null|string
-     */
-    private $_orderOptions = null;
-    /**
-     * @var array
-     */
-    private $_group = [];
-    /**
-     * @var array|string|\Mindy\QueryBuilder\Aggregation\Aggregation
-     */
-    private $_select = [];
-    /**
      * @var null|string
      */
     private $_alias = null;
@@ -97,7 +73,10 @@ class QueryBuilder implements QueryBuilderInterface
         'distinct' => [],
         'join' => [],
         'set' => [],
-        'where' => null,
+        'where' => [
+            'and' => [],
+            'or' => [],
+        ],
         'groupBy' => [],
         'having' => null,
         'limit' => null,
@@ -225,13 +204,13 @@ class QueryBuilder implements QueryBuilderInterface
      */
     protected function buildSelect()
     {
-        if (empty($this->_select)) {
-            $this->_select = ['*'];
+        if (empty($this->sqlParts['select'])) {
+            $this->sqlParts['select'] = ['*'];
         }
 
         $builder = $this->getLookupBuilder();
         $columns = [];
-        foreach ($this->_select as $alias => $column) {
+        foreach ($this->sqlParts['select'] as $alias => $column) {
             if ($column instanceof Aggregation) {
                 $columns[$alias] = $this->buildSelectFromAggregation($column);
             } elseif (is_string($column)) {
@@ -405,7 +384,8 @@ class QueryBuilder implements QueryBuilderInterface
         } else {
             $parts[] = $select;
         }
-        $this->_select = $parts;
+
+        $this->sqlParts['select'] = $parts;
 
         return $this;
     }
@@ -561,12 +541,37 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $this->type = self::SELECT;
 
-        $this->_whereAnd = [];
-        $this->_whereOr = [];
-
         $this->resetQueryParts();
 
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    protected function defaultQueryParts(): array
+    {
+        return [
+            'select' => [],
+            'from' => [],
+            'distinct' => [],
+            'join' => [],
+            'set' => [],
+            'where' => [
+                'and' => [],
+                'or' => [],
+            ],
+            'groupBy' => [],
+            'having' => null,
+            'limit' => null,
+            'offset' => null,
+            'orderBy' => [
+                'columns' => [],
+                'options' => null,
+            ],
+            'values' => [],
+            'union' => [],
+        ];
     }
 
     /**
@@ -576,9 +581,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function resetQueryParts()
     {
-        foreach (array_keys($this->sqlParts) as $queryPartName) {
-            $this->resetQueryPart($queryPartName);
-        }
+        $this->sqlParts = $this->defaultQueryParts();
 
         return $this;
     }
@@ -592,10 +595,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function resetQueryPart($queryPartName)
     {
-        $this->sqlParts[$queryPartName] = is_array($this->sqlParts[$queryPartName])
-            ? [] : null;
-
-        $this->state = self::STATE_DIRTY;
+        $this->sqlParts[$queryPartName] = $this->defaultQueryParts()[$queryPartName];
 
         return $this;
     }
@@ -699,18 +699,6 @@ class QueryBuilder implements QueryBuilderInterface
                     $parts[] = $this->lookupBuilder->runLookup($this->getAdapter(), $lookup, $column, $lookupValue);
                 }
             }
-
-            /*
-            $conditions = $this->lookupBuilder->parse($condition);
-            foreach ($conditions as $key => $value) {
-                list($lookup, $column, $lookupValue) = $value;
-                $column = $this->getLookupBuilder()->fetchColumnName($column);
-                if (empty($tableAlias) === false) {
-                    $column = $tableAlias . '.' . $column;
-                }
-                $parts[] = $this->lookupBuilder->runLookup($this->getAdapter(), $lookup, $column, $lookupValue);
-            }
-            */
         } elseif (is_string($condition)) {
             $parts[] = $condition;
         } elseif ($condition instanceof Expression) {
@@ -751,7 +739,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function where($condition)
     {
-        $this->_whereAnd[] = $condition;
+        $this->sqlParts['where']['and'][] = $condition;
 
         return $this;
     }
@@ -763,7 +751,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function orWhere($condition)
     {
-        $this->_whereOr[] = $condition;
+        $this->sqlParts['where']['or'][] = $condition;
 
         return $this;
     }
@@ -774,7 +762,7 @@ class QueryBuilder implements QueryBuilderInterface
     public function buildWhereTree()
     {
         $where = [];
-        foreach ($this->_whereAnd as $condition) {
+        foreach ($this->sqlParts['where']['and'] as $condition) {
             if (empty($where)) {
                 $where = ['and', $condition];
             } else {
@@ -782,7 +770,7 @@ class QueryBuilder implements QueryBuilderInterface
             }
         }
 
-        foreach ($this->_whereOr as $condition) {
+        foreach ($this->sqlParts['where']['or'] as $condition) {
             if (empty($where)) {
                 $where = ['or', $condition];
             } else {
@@ -791,11 +779,6 @@ class QueryBuilder implements QueryBuilderInterface
         }
 
         return $where;
-    }
-
-    public function getSelect()
-    {
-        return $this->_select;
     }
 
     public function buildWhere()
