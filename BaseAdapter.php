@@ -573,16 +573,4 @@ abstract class BaseAdapter implements AdapterInterface
 
         return $selectSql.implode(', ', $select);
     }
-
-    /**
-     * Prepare value for db.
-     *
-     * @param $value
-     *
-     * @return int
-     */
-    public function prepareValue($value)
-    {
-        return $value;
-    }
 }

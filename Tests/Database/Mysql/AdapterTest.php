@@ -36,9 +36,6 @@ class AdapterTest extends BaseTest
         /** @var Adapter $adapter */
         $adapter = $this->getAdapter();
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
-        $this->assertSame(1, $adapter->prepareValue(1));
-        $this->assertSame('1', $adapter->prepareValue('1'));
-        $this->assertSame(1, $adapter->prepareValue(true));
 
         $this->assertSame('LIMIT 18446744073709551615 OFFSET 10', $adapter->sqlLimitOffset(null, 10));
         $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));

@@ -653,8 +653,6 @@ class QueryBuilder implements QueryBuilderInterface
                 if ($value instanceof Q) {
                     $parts[] = $this->parseCondition($value);
                 } else {
-                    $value = $this->getAdapter()->prepareValue($value);
-
                     list($lookup, $column, $lookupValue) = $this->lookupBuilder->parseLookup($this, $key, $value);
                     $column = $this->getLookupBuilder()->fetchColumnName($column);
                     if (false === empty($tableAlias) && false === strpos($column, '.')) {
