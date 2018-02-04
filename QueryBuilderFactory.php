@@ -12,18 +12,39 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
+use Mindy\QueryBuilder\Exception\NotSupportedException;
 
 class QueryBuilderFactory
 {
     /**
      * @param Connection             $connection
-     * @param BaseAdapter            $adapter
-     * @param LookupBuilderInterface $lookupBuilder
+     *
+     * @throws NotSupportedException
      *
      * @return QueryBuilder
      */
-    public static function getQueryBuilder(Connection $connection, BaseAdapter $adapter, LookupBuilderInterface $lookupBuilder)
+    public static function getQueryBuilder(Connection $connection)
     {
+        switch ($connection->getDriver()->getName()) {
+            case 'pdo_mysql':
+                $adapter = new Database\Mysql\Adapter($connection);
+                break;
+
+            case 'pdo_sqlite':
+                $adapter = new Database\sqlite\Adapter($connection);
+                break;
+
+            case 'pdo_pgsql':
+                $adapter = new Database\Pgsql\Adapter($connection);
+                break;
+
+            default:
+                throw new NotSupportedException('Unknown driver');
+        }
+
+        $lookupBuilder = new LookupBuilder();
+        $lookupBuilder->addLookupCollection($adapter->getLookupCollection());
+
         return new QueryBuilder($connection, $adapter, $lookupBuilder);
     }
 }

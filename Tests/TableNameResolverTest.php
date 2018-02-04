@@ -9,7 +9,6 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-
 namespace Mindy\QueryBuilder\Tests;
 
 use Mindy\QueryBuilder\Utils\TableNameResolver;

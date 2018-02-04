@@ -14,9 +14,6 @@ namespace Mindy\QueryBuilder;
 use Doctrine\DBAL\Connection;
 use Exception;
 use Mindy\QueryBuilder\Aggregation\Aggregation;
-use Mindy\QueryBuilder\Database\Mysql\Adapter as MysqlAdapter;
-use Mindy\QueryBuilder\Database\Pgsql\Adapter as PgsqlAdapter;
-use Mindy\QueryBuilder\Database\Sqlite\Adapter as SqliteAdapter;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Q\QAnd;
 use Mindy\QueryBuilder\Utils\TableNameResolver;
@@ -44,10 +41,6 @@ class QueryBuilder implements QueryBuilderInterface
     /**
      * @var array|string
      */
-    private $_join = [];
-    /**
-     * @var array|string
-     */
     private $_order = [];
     /**
      * @var null|string
@@ -62,25 +55,9 @@ class QueryBuilder implements QueryBuilderInterface
      */
     private $_select = [];
     /**
-     * @var null|string|int
-     */
-    private $_limit = null;
-    /**
-     * @var null|string|int
-     */
-    private $_offset = null;
-    /**
-     * @var array
-     */
-    private $_having = [];
-    /**
      * @var null|string
      */
     private $_alias = null;
-    /**
-     * @var array
-     */
-    private $_update = [];
 
     protected $tablePrefix = '';
     /**
@@ -92,16 +69,14 @@ class QueryBuilder implements QueryBuilderInterface
      */
     protected $lookupBuilder;
     /**
-     * @var null
-     */
-    protected $schema;
-    /**
      * Counter of joined tables aliases.
      *
      * @var int
      */
     private $_aliasesCount = 0;
-
+    /**
+     * @var array
+     */
     private $_joinAlias = [];
     /**
      * @var Connection
@@ -125,7 +100,12 @@ class QueryBuilder implements QueryBuilderInterface
         'where' => null,
         'groupBy' => [],
         'having' => null,
-        'orderBy' => [],
+        'limit' => null,
+        'offset' => null,
+        'orderBy' => [
+            'columns' => [],
+            'options' => null,
+        ],
         'values' => [],
         'union' => [],
     ];
@@ -141,35 +121,6 @@ class QueryBuilder implements QueryBuilderInterface
     public function getDatabasePlatform()
     {
         return $this->getConnection()->getDatabasePlatform();
-    }
-
-    /**
-     * @param Connection $connection
-     *
-     * @throws Exception
-     *
-     * @return QueryBuilder
-     */
-    public static function getInstance(Connection $connection)
-    {
-        $driver = $connection->getDriver();
-        switch ($driver->getName()) {
-            case 'pdo_mysql':
-                $adapter = new MysqlAdapter($connection);
-                break;
-            case 'pdo_sqlite':
-                $adapter = new SqliteAdapter($connection);
-                break;
-            case 'pdo_pgsql':
-                $adapter = new PgsqlAdapter($connection);
-                break;
-            default:
-                throw new Exception('Unknown driver');
-        }
-        $lookupBuilder = new LookupBuilder();
-        $lookupBuilder->addLookupCollection($adapter->getLookupCollection());
-
-        return new self($connection, $adapter, $lookupBuilder);
     }
 
     /**
@@ -412,54 +363,6 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param $columns
-     * @param null $options
-     *
-     * @throws \Doctrine\DBAL\DBALException
-     *
-     * @return string
-     */
-    public function sqlOrderBy($columns, $options = null)
-    {
-        if (empty($columns)) {
-            return '';
-        }
-
-        if (is_string($columns)) {
-            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
-            $quotedColumns = array_map(function ($column) {
-                $temp = explode(' ', $column);
-                if (2 == count($temp)) {
-                    return $this->getQuotedName($temp[0]).' '.$temp[1];
-                }
-
-                return $this->getQuotedName($column);
-            }, $columns);
-
-            return implode(', ', $quotedColumns);
-        }
-
-        $order = [];
-        foreach ($columns as $key => $column) {
-            if (is_numeric($key)) {
-                if (0 === strpos($column, '-', 0)) {
-                    $column = substr($column, 1);
-                    $direction = 'DESC';
-                } else {
-                    $direction = 'ASC';
-                }
-            } else {
-                $direction = $column;
-                $column = $key;
-            }
-
-            $order[] = $this->getQuotedName($column).' '.$direction;
-        }
-
-        return implode(', ', $order).(empty($options) ? '' : ' '.$options);
-    }
-
-    /**
      * @param $select
      * @param null $distinct
      *
@@ -526,7 +429,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function hasJoin($alias)
     {
-        return array_key_exists($alias, $this->_join);
+        return array_key_exists($alias, $this->sqlParts['join']);
     }
 
     /**
@@ -544,7 +447,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function limit($limit)
     {
-        $this->_limit = $limit;
+        $this->sqlParts['limit'] = $limit;
 
         return $this;
     }
@@ -556,7 +459,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function offset($offset)
     {
-        $this->_offset = $offset;
+        $this->sqlParts['offset'] = $offset;
 
         return $this;
     }
@@ -590,11 +493,12 @@ class QueryBuilder implements QueryBuilderInterface
     public function join($joinType, $tableName = '', $on = [], $alias = '')
     {
         if (is_string($joinType) && empty($tableName)) {
-            $this->_join[] = $this->getAdapter()->quoteSql($joinType);
+            $this->sqlParts['join'][] = $this->getAdapter()->quoteSql($joinType);
         } elseif ($tableName instanceof self) {
-            $this->_join[] = $this->sqlJoin($joinType, $tableName, $on, $alias);
+            $this->sqlParts['join'][] = $this->sqlJoin($joinType, $tableName, $on, $alias);
         } else {
-            $this->_join[$tableName] = $this->sqlJoin($joinType, $tableName, $on, $alias);
+            $this->sqlParts['join'][$tableName] = $this->sqlJoin($joinType, $tableName, $on, $alias);
+
             $this->_joinAlias[$tableName] = $alias;
         }
 
@@ -608,7 +512,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function joinRaw(string $sql)
     {
-        $this->_join[] = $this->getAdapter()->quoteSql($sql);
+        $this->sqlParts['join'][] = $this->getAdapter()->quoteSql($sql);
 
         return $this;
     }
@@ -640,8 +544,10 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function order($columns, $options = null)
     {
-        $this->_order = $columns;
-        $this->_orderOptions = $options;
+        $this->sqlParts['orderBy'] = [
+            'columns' => $columns,
+            'options' => $options,
+        ];
 
         return $this;
     }
@@ -657,14 +563,6 @@ class QueryBuilder implements QueryBuilderInterface
 
         $this->_whereAnd = [];
         $this->_whereOr = [];
-        $this->_join = [];
-        $this->_insert = [];
-        $this->_update = [];
-        $this->_group = [];
-        $this->_order = [];
-        $this->_select = [];
-        $this->_union = [];
-        $this->_having = [];
 
         $this->resetQueryParts();
 
@@ -1022,11 +920,13 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function buildLimitOffset(): string
     {
-        $qb = $this->getConnection()->createQueryBuilder();
-        $qb->setMaxResults($this->_limit);
-        $qb->setFirstResult($this->_offset);
+        $sql = $this
+            ->getConnection()
+            ->createQueryBuilder()
+            ->setMaxResults($this->sqlParts['limit'])
+            ->setFirstResult($this->sqlParts['offset']);
 
-        return trim(str_replace('SELECT', '', $qb->getSQL()));
+        return trim(str_replace('SELECT', '', $sql));
     }
 
     public function buildUnion()
@@ -1138,7 +1038,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function getJoin($tableName)
     {
-        return $this->_join[$tableName];
+        return $this->sqlParts['join'][$tableName];
     }
 
     /**
@@ -1175,13 +1075,13 @@ class QueryBuilder implements QueryBuilderInterface
         return $column;
     }
 
-    public function buildJoin()
+    protected function buildJoin()
     {
-        if (empty($this->_join)) {
+        if (empty($this->sqlParts['join'])) {
             return '';
         }
         $join = [];
-        foreach ($this->_join as $part) {
+        foreach ($this->sqlParts['join'] as $part) {
             $join[] = $part;
         }
 
@@ -1189,69 +1089,92 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param $order
+     * @param string $order
      *
-     * @return string
+     * @return array
      */
-    protected function buildOrderJoin($order)
+    protected function buildOrderJoin(string $order): array
     {
-        if (false === strpos($order, '-', 0)) {
-            $direction = 'ASC';
-        } else {
-            $direction = 'DESC';
-            $order = substr($order, 1);
-        }
-        $order = $this->getLookupBuilder()->fetchColumnName($order);
-        $newOrder = $this->getLookupBuilder()->buildJoin($this, $order);
+        list($column, $direction) = $this->formatOrderDirection($order);
+
+        $lookupBuilder = $this->getLookupBuilder();
+
+        $column = $lookupBuilder->fetchColumnName($column);
+        $newOrder = $lookupBuilder->buildJoin($this, $column);
         if (false === $newOrder) {
-            return [$order, $direction];
+            return [$column, $direction];
         }
+
         list($alias, $column) = $newOrder;
 
-        return [$alias.'.'.$column, $direction];
+        return [
+            $alias.'.'.$column,
+            $direction,
+        ];
     }
 
-    public function getOrder()
+    /**
+     * @param string $input
+     *
+     * @return array
+     */
+    protected function formatOrderDirection(string $input): array
     {
-        return [$this->_order, $this->_orderOptions];
+        if (0 === strpos($input, '-', 0)) {
+            return [substr($input, 1), 'DESC'];
+        }
+
+        return [$input, 'ASC'];
     }
 
+    protected function prepareOrderFromString(string $input): array
+    {
+        $columns = preg_split('/\s*,\s*/', $input, -1, PREG_SPLIT_NO_EMPTY);
+
+        return array_map(function ($raw) {
+            if (false === strpos($raw, ' ')) {
+                return $this->getQuotedName($raw);
+            }
+
+            list($column, $direction) = explode(' ', $raw);
+
+            return $this->getQuotedName($column).' '.$direction;
+        }, $columns);
+    }
+
+    /**
+     * @return string
+     */
     public function buildOrder()
     {
-        /*
-         * не делать проверку по empty(), проваливается половина тестов с ORDER BY
-         * и проваливается тест с построением JOIN по lookup
-         */
-        if (null === $this->_order) {
+        $orderColumns = $this->sqlParts['orderBy']['columns'];
+        $options = $this->sqlParts['orderBy']['options'];
+
+        if (empty($orderColumns)) {
             return '';
         }
 
         $order = [];
-        if (is_array($this->_order)) {
-            foreach ($this->_order as $column) {
+        if (is_array($orderColumns)) {
+            foreach ($orderColumns as $column) {
                 if ('?' === $column) {
                     $order[] = $this->getAdapter()->getRandomOrder();
                 } else {
                     list($newColumn, $direction) = $this->buildOrderJoin($column);
-                    $order[$this->applyTableAlias($newColumn)] = $direction;
+                    $order[] = $this->applyTableAlias($newColumn).' '.$direction;
                 }
             }
-        } elseif (is_string($this->_order)) {
-            $columns = preg_split('/\s*,\s*/', $this->_order, -1, PREG_SPLIT_NO_EMPTY);
-            $order = array_map(function ($column) {
-                $temp = explode(' ', $column);
-                if (2 == count($temp)) {
-                    return $this->getQuotedName($temp[0]).' '.$temp[1];
-                }
-
-                return $this->getQuotedName($column);
-            }, $columns);
-            $order = implode(', ', $order);
+        } elseif (is_string($orderColumns)) {
+            $order = $this->prepareOrderFromString($orderColumns);
         } else {
-            $order = $this->buildOrderJoin($this->_order);
+            $order[] = implode(', ', $this->buildOrderJoin($this->_order));
         }
 
-        $sql = $this->sqlOrderBy($order, $this->_orderOptions);
+        $sql = implode(', ', $order);
+
+        if (false === empty($options)) {
+            $sql .= $options;
+        }
 
         return empty($sql) ? '' : ' ORDER BY '.$sql;
     }

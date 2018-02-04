@@ -29,7 +29,7 @@ class QueryBuilderFactoryTest extends BaseTest
     }
 
     /**
-     * @expectedException \Exception
+     * @expectedException \Mindy\QueryBuilder\Exception\NotSupportedException
      * @expectedExceptionMessage Unknown driver
      */
     public function testInstance()
@@ -44,6 +44,6 @@ class QueryBuilderFactoryTest extends BaseTest
             ->getMock();
         $connection->method('getDriver')->willReturn($driver);
 
-        QueryBuilder::getInstance($connection);
+        QueryBuilderFactory::getQueryBuilder($connection);
     }
 }

@@ -102,7 +102,10 @@ class LookupBuilder implements LookupBuilderInterface
         return $this->joinCallback;
     }
 
-    public function fetchColumnName($column)
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchColumnName(string $column)
     {
         if (null === $this->fetchColumnCallback) {
             return $column;

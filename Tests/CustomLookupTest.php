@@ -40,7 +40,6 @@ class LookupLibrary implements LookupCollectionInterface
         switch ($lookup) {
             case 'foo':
                 return $adapter->getQuotedName($x).' ??? '.$y;
-//                return $adapter->getQuotedName($x).' ??? '.$adapter->quoteValue($y);
 
             default:
                 throw new Exception('Unknown lookup: '.$lookup);

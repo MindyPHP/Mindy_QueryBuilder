@@ -13,6 +13,9 @@ namespace Mindy\QueryBuilder\Tests;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Mindy\QueryBuilder\AdapterInterface;
+use Mindy\QueryBuilder\QueryBuilder;
+use Mindy\QueryBuilder\QueryBuilderFactory;
 use PHPUnit\Framework\TestCase;
 
 abstract class ConnectionAwareTest extends TestCase
@@ -94,5 +97,25 @@ abstract class ConnectionAwareTest extends TestCase
             }
             $stmt->closeCursor();
         }
+    }
+
+    /**
+     * @throws \Exception
+     *
+     * @return AdapterInterface
+     */
+    protected function getAdapter(): AdapterInterface
+    {
+        return $this->getQueryBuilder()->getAdapter();
+    }
+
+    /**
+     * @throws \Exception
+     *
+     * @return QueryBuilder
+     */
+    protected function getQueryBuilder()
+    {
+        return QueryBuilderFactory::getQueryBuilder($this->connection);
     }
 }

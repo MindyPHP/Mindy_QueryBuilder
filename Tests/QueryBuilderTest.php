@@ -15,6 +15,17 @@ use Mindy\QueryBuilder\Aggregation;
 use Mindy\QueryBuilder\Expression;
 use Mindy\QueryBuilder\LookupBuilder;
 use Mindy\QueryBuilder\QueryBuilder;
+use Mindy\QueryBuilder\QueryBuilderFactory;
+
+class CloneCallback
+{
+    public function run(QueryBuilder $queryBuilder, $lookupBuilder, $lookupNodes, $value)
+    {
+        $queryBuilder->join('LEFT JOIN', 'test', ['test_1.id' => 'user_1.user_id'], 'test_1');
+
+        return ['exact', 'id', $value];
+    }
+}
 
 class BuildSelectJoinCallback
 {
@@ -43,11 +54,43 @@ class BuildSelectJoinCallback
     }
 }
 
+class BuildJoinCallback
+{
+    public function run(QueryBuilder $queryBuilder, LookupBuilder $lookupBuilder, array $lookupNodes)
+    {
+        $column = '';
+        $alias = '';
+        foreach ($lookupNodes as $i => $nodeName) {
+            if ($i + 1 == count($lookupNodes)) {
+                $column = $nodeName;
+            } else {
+                switch ($nodeName) {
+                    case 'user':
+                        $alias = 'user_1';
+                        $queryBuilder->join('LEFT JOIN', $nodeName, ['user_1.id' => 'customer.user_id'], $alias);
+                        break;
+                }
+            }
+        }
+
+        if (empty($alias) || empty($column)) {
+            return false;
+        }
+
+        return [$alias, $column];
+    }
+}
+
 class QueryBuilderTest extends ConnectionAwareTest
 {
+    /**
+     * @throws \Mindy\QueryBuilder\Exception\NotSupportedException
+     *
+     * @return QueryBuilder
+     */
     protected function createBuilder()
     {
-        return QueryBuilder::getInstance($this->connection);
+        return QueryBuilderFactory::getQueryBuilder($this->connection);
     }
 
     /**
@@ -294,7 +337,7 @@ class QueryBuilderTest extends ConnectionAwareTest
             ->createBuilder()
             ->insert('test')
             ->values([
-                ['name' => 'qwe']
+                ['name' => 'qwe'],
             ])
             ->toSQL();
         $this->assertSame("INSERT INTO test (name) VALUES ('qwe')", $sql);
@@ -304,7 +347,7 @@ class QueryBuilderTest extends ConnectionAwareTest
             ->insert('test')
             ->values([
                 ['name' => 'foo'],
-                ['name' => 'bar']
+                ['name' => 'bar'],
             ])
             ->toSQL();
         $this->assertSame("INSERT INTO test (name) VALUES ('foo'), ('bar')", $sql);
@@ -454,13 +497,268 @@ class QueryBuilderTest extends ConnectionAwareTest
         $this->assertSame('SELECT t.* FROM comment AS t GROUP BY t.id ORDER BY t.id ASC', $sql);
     }
 
+    public function testFrom()
+    {
+        $sql = $this
+            ->createBuilder()
+            ->from(['test' => 'foo', 'bar'])
+            ->toSQL();
+        $this->assertSame('SELECT * FROM foo AS test, bar', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->setAlias('test')
+            ->from('foo')
+            ->toSQL();
+        $this->assertSame('SELECT test.* FROM foo AS test', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->from(['foo', 'bar'])
+            ->toSQL();
+        $this->assertSame('SELECT * FROM foo, bar', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->from('test')
+            ->toSQL();
+        $this->assertSame('SELECT * FROM test', $sql);
+
+        $qbSub = $this
+            ->createBuilder()
+            ->from(['comment'])
+            ->select('user_id')
+            ->where(['name' => 'foo']);
+
+        $sql = $this
+            ->createBuilder()
+            ->from(['t' => $qbSub->toSQL()])
+            ->toSQL();
+        $this->assertSame(
+            'SELECT * FROM (SELECT user_id FROM comment WHERE (name = \'foo\')) AS t',
+            $sql
+        );
+
+        $qbSub = $this
+            ->createBuilder()
+            ->from(['comment'])
+            ->select('user_id')
+            ->where(['name' => 'foo']);
+
+        $sql = $this
+            ->createBuilder()
+            ->from(['t' => $qbSub])
+            ->toSQL();
+        $this->assertSame("SELECT * FROM (SELECT user_id FROM comment WHERE (name = 'foo')) AS t", $sql);
+    }
+
     public function testClone()
     {
-        $qb = $this->createBuilder();
-        $qb->select('a, b, c')->from('test');
+        $qb = $this
+            ->createBuilder()
+            ->select('a, b, c')
+            ->from('test');
 
         $this->assertEquals('SELECT a, b, c FROM test', $qb->toSQL());
-        $copy = clone $qb;
-        $this->assertEquals('SELECT a, b, c FROM test', $copy->toSQL());
+        $this->assertEquals('SELECT a, b, c FROM test', (clone $qb)->toSQL());
+
+        $qb = $this->createBuilder();
+        $sql = (clone $qb)
+            ->join('LEFT JOIN', 'test', ['id' => 'user_id'])
+            ->toSQL();
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $sql);
+
+        $qb = $this
+            ->createBuilder()
+            ->join('LEFT JOIN', 'test', ['id' => 'user_id']);
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $qb->toSQL());
+
+        $clone = (clone $qb)
+            ->where(['id' => 1]);
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id WHERE (id = 1)', $clone->toSQL());
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $qb->toSQL());
+
+        $qb = $this->createBuilder();
+        $qb->getLookupBuilder()->setCallback(new CloneCallback());
+        $qb
+            ->from('user')
+            ->where(['test__id' => 1])
+            ->setAlias('user_1');
+
+        $sql = (clone $qb)->toSQL();
+        $this->assertSame(
+            'SELECT user_1.* FROM user AS user_1 LEFT JOIN test AS test_1 ON test_1.id=user_1.user_id WHERE (user_1.id = 1)',
+            $sql
+        );
+    }
+
+    public function testJoin()
+    {
+        $sql = $this
+            ->createBuilder()
+            ->from('test')
+            ->join('LEFT JOIN', 'test', ['main.user_id' => 'test_user.id'], 'test_user')
+            ->toSQL();
+        $this->assertSame('SELECT * FROM test LEFT JOIN test AS test_user ON main.user_id=test_user.id', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->from('test')
+            ->join('LEFT JOIN', 'test', ['id' => 'user_id'])
+            ->toSQL();
+        $this->assertSame('SELECT * FROM test LEFT JOIN test ON id=user_id', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->from('test')
+            ->join('LEFT JOIN test ON test.id = foo.bar_id')
+            ->toSQL();
+        $this->assertSame('SELECT * FROM test LEFT JOIN test ON test.id = foo.bar_id', $sql);
+
+        $qb = $this
+            ->createBuilder()
+            ->join('LEFT JOIN', 'test', ['id' => 'user_id']);
+
+        $clone = clone $qb;
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $clone->toSQL());
+
+        $sql = $this
+            ->createBuilder()
+            ->join('LEFT JOIN', 'test', ['id' => 'user_id'])
+            ->join('INNER JOIN', 'user', ['parent_id' => 'id'])
+            ->toSQL();
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id INNER JOIN user ON parent_id=id', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->joinRaw('LEFT JOIN test ON id=user_id')
+            ->toSQL();
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->join('LEFT JOIN', 'test', ['user_id' => new Expression('1')])
+            ->toSQL();
+        $this->assertSame('SELECT * LEFT JOIN test ON user_id=1', $sql);
+
+        $qbSub = $this
+            ->createBuilder()
+            ->from('user')
+            ->select('id');
+
+        $sql = $this
+            ->createBuilder()
+            ->select(['c.*'])
+            ->from(['c' => 'comment'])
+            ->join('INNER JOIN', $qbSub->toSQL(), ['u.id' => 'c.user_id'], 'u')
+            ->toSQL();
+        $this->assertSame(
+            'SELECT c.* FROM comment AS c INNER JOIN (SELECT id FROM user) AS u ON u.id=c.user_id',
+            $sql
+        );
+
+        $qbSub = $this
+            ->createBuilder()
+            ->from('user')
+            ->select('id');
+
+        $sql = $this
+            ->createBuilder()
+            ->select(['c.*'])
+            ->from(['c' => 'comment'])
+            ->join('INNER JOIN', $qbSub, ['u.id' => 'c.user_id'], 'u')
+            ->toSQL();
+        $this->assertSame(
+            'SELECT c.* FROM comment AS c INNER JOIN (SELECT id FROM user) AS u ON u.id=c.user_id',
+            $sql
+        );
+
+        $qb = $this->createBuilder();
+        $qb->getLookupBuilder()->setJoinCallback(new BuildJoinCallback());
+        $sql = $qb
+            ->from('customer')
+            ->select(['user__id'])
+            ->toSQL();
+        $this->assertSame('SELECT user_1.id FROM customer LEFT JOIN user AS user_1 ON user_1.id=customer.user_id', $sql);
+
+        $qb = $this->createBuilder();
+        $qb->getLookupBuilder()->setJoinCallback(new BuildJoinCallback());
+        $sql = $qb
+            ->from('customer')
+            ->select([
+                new Aggregation\Min('user__id', 'id_min'),
+                new Aggregation\Max('user__id', 'id_max'),
+            ])
+            ->toSQL();
+        $this->assertSame(
+            'SELECT MIN(user_1.id) AS id_min, MAX(user_1.id) AS id_max FROM customer LEFT JOIN user AS user_1 ON user_1.id=customer.user_id',
+            $sql
+        );
+    }
+
+    public function testUnion()
+    {
+        $qb = $this
+            ->createBuilder()
+            ->select('a, b, c')
+            ->from('test');
+        $sql = $qb
+            ->union(clone $qb, true)
+            ->toSQL();
+        $this->assertEquals('SELECT a, b, c FROM test UNION ALL (SELECT a, b, c FROM test)', $sql);
+
+        $qb = $this
+            ->createBuilder()
+            ->select('a, b, c')
+            ->from('test')
+            ->order(['-a']);
+        $sql = $qb
+            ->union(clone $qb, true)
+            ->toSQL();
+        $this->assertSame(
+            'SELECT a, b, c FROM test UNION ALL (SELECT a, b, c FROM test) ORDER BY a DESC',
+            $sql
+        );
+
+        $sql = $this
+            ->createBuilder()
+            ->select('a, b, c')
+            ->from('test')
+            ->union('SELECT a, b, c FROM test', true)
+            ->toSQL();
+        $this->assertSame(
+            'SELECT a, b, c FROM test UNION ALL (SELECT a, b, c FROM test)',
+            $sql
+        );
+    }
+
+    public function testLimit()
+    {
+        $sql = $this
+            ->createBuilder()
+            ->limit(10)
+            ->toSQL();
+        $this->assertSame('SELECT * LIMIT 10', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->limit(10)
+            ->offset(10)
+            ->toSQL();
+        $this->assertSame('SELECT * LIMIT 10 OFFSET 10', $sql);
+
+        $sql = $this
+            ->createBuilder()
+            ->paginate(4, 10)
+            ->toSQL();
+        $this->assertSame('SELECT * LIMIT 10 OFFSET 30', $sql);
+    }
+
+    public function testAggregationAlias()
+    {
+        $sql = (new Aggregation\Aggregation('foo'))
+            ->setTableAlias('bar')
+            ->toSQL();
+        $this->assertSame('[[bar]].', $sql);
     }
 }

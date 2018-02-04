@@ -63,4 +63,19 @@ interface LookupBuilderInterface
      * @return $this
      */
     public function setJoinCallback($callback);
+
+    /**
+     * @param string $column
+     *
+     * @return mixed
+     */
+    public function fetchColumnName(string $column);
+
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param $lookup
+     *
+     * @return mixed
+     */
+    public function buildJoin(QueryBuilder $queryBuilder, $lookup);
 }

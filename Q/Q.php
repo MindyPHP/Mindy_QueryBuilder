@@ -78,18 +78,6 @@ abstract class Q implements QueryBuilderAwareInterface
         return $this;
     }
 
-    public function getWhere()
-    {
-        return $this->where;
-    }
-
-    public function addWhere($where)
-    {
-        $this->where[] = $where;
-
-        return $this;
-    }
-
     /**
      * @return string
      */
@@ -107,6 +95,10 @@ abstract class Q implements QueryBuilderAwareInterface
     }
 
     /**
+     * @param QueryBuilderInterface $queryBuilder
+     *
+     * @throws Exception
+     *
      * @return string
      */
     protected function parseWhere(QueryBuilderInterface $queryBuilder)
@@ -114,16 +106,28 @@ abstract class Q implements QueryBuilderAwareInterface
         return $this->parseConditions($queryBuilder, $this->where);
     }
 
-    private function isWherePart($where)
+    /**
+     * @param $where
+     *
+     * @return bool
+     */
+    private function isWherePart($where): bool
     {
-        return is_array($where) &&
-        array_key_exists('___operator', $where) &&
-        array_key_exists('___where', $where) &&
-        array_key_exists('___condition', $where);
+        if (is_array($where)) {
+            return
+                array_key_exists('___operator', $where) &&
+                array_key_exists('___where', $where) &&
+                array_key_exists('___condition', $where);
+        }
+
+        return false;
     }
 
     /**
-     * @param array $where
+     * @param QueryBuilderInterface $queryBuilder
+     * @param array                 $where
+     *
+     * @throws Exception
      *
      * @return string
      */
@@ -156,7 +160,9 @@ abstract class Q implements QueryBuilderAwareInterface
     }
 
     /**
+     * @param QueryBuilderInterface $queryBuilder
      * @param $part
+     * @param null $operator
      *
      * @throws Exception
      *
