@@ -60,11 +60,6 @@ class QueryBuilder implements QueryBuilderInterface
     protected $connection;
 
     /**
-     * @var string|null
-     */
-    protected $sql = null;
-
-    /**
      * @var array the array of SQL parts collected
      */
     private $sqlParts = [
