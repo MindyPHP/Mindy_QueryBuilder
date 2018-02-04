@@ -18,42 +18,6 @@ use Mindy\QueryBuilder\BaseAdapter;
 class Adapter extends BaseAdapter implements AdapterInterface
 {
     /**
-     * @param string $str
-     *
-     * @return string
-     */
-    public function quoteValue($str)
-    {
-        if (true === $str || 'true' === $str) {
-            return 'TRUE';
-        } elseif (false === $str || 'false' === $str) {
-            return 'FALSE';
-        } elseif (null === $str || 'null' === $str) {
-            return 'NULL';
-        }
-
-        return parent::quoteValue($str);
-    }
-
-    /**
-     * Creates a SQL statement for resetting the sequence value of a table's primary key.
-     * The sequence will be reset such that the primary key of the next new row inserted
-     * will have the specified value or 1.
-     *
-     * @param string $sequenceName the name of the table whose primary key sequence will be reset
-     * @param mixed  $value        the value for the primary key of the next new row inserted. If this is not set,
-     *                             the next new row's primary key will have a value 1.
-     *
-     * @throws Exception if the table does not exist or there is no sequence associated with the table
-     *
-     * @return string the SQL statement for resetting sequence
-     */
-    public function sqlResetSequence($sequenceName, $value)
-    {
-        return 'SELECT SETVAL('.$this->getQuotedName($sequenceName).', '.$this->quoteValue($value).', false)';
-    }
-
-    /**
      * Builds a SQL statement for enabling or disabling integrity check.
      *
      * @param bool   $check  whether to turn on or off the integrity check

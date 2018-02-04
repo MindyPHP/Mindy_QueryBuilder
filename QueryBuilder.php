@@ -319,7 +319,136 @@ class QueryBuilder implements QueryBuilderInterface
             }
         }
 
-        return $this->getAdapter()->sqlSelect($select, $this->_distinct);
+        return $this->sqlSelect($select, $this->_distinct);
+    }
+
+    /**
+     * @param array|null|string $columns
+     * @param null              $distinct
+     *
+     * @throws \Exception
+     *
+     * @return string
+     */
+    public function sqlSelect($columns, $distinct = null)
+    {
+        $selectSql = $distinct ? 'SELECT DISTINCT ' : 'SELECT ';
+        if (empty($columns)) {
+            return $selectSql.'*';
+        }
+
+        if (false === is_array($columns)) {
+            $columns = [$columns];
+        }
+
+        $select = [];
+        foreach ($columns as $column => $subQuery) {
+            if ($subQuery instanceof QueryBuilder) {
+                $subQuery = $subQuery->toSQL();
+            } elseif ($subQuery instanceof Expression) {
+                $subQuery = $this->getAdapter()->quoteSql($subQuery->toSQL());
+            } else {
+                $subQuery = $this->getAdapter()->quoteSql($subQuery);
+            }
+
+            if (is_numeric($column)) {
+                $column = $subQuery;
+                $subQuery = '';
+            }
+
+            if (!empty($subQuery)) {
+                if (false !== strpos($subQuery, 'SELECT')) {
+                    $value = '('.$subQuery.') AS '.$this->getAdapter()->getQuotedName($column);
+                } else {
+                    $value = $this->getAdapter()->getQuotedName($subQuery).' AS '.$this->getAdapter()->getQuotedName($column);
+                }
+            } else {
+                if (false === strpos($column, ',') && false !== strpos($column, 'AS')) {
+                    if (false !== strpos($column, 'AS')) {
+                        list($rawColumn, $rawAlias) = explode('AS', $column);
+                    } else {
+                        $rawColumn = $column;
+                        $rawAlias = '';
+                    }
+
+                    $value = empty($rawAlias) ?
+                        $this->getAdapter()->getQuotedName(trim($rawColumn)) :
+                        $this->getAdapter()->getQuotedName(trim($rawColumn)).' AS '.$this->getAdapter()->getQuotedName(trim($rawAlias));
+                } elseif (false !== strpos($column, ',')) {
+                    $newSelect = [];
+                    foreach (explode(',', $column) as $item) {
+                        // if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $item, $matches)) {
+                        //     list(, $rawColumn, $rawAlias) = $matches;
+                        // }
+
+                        if (false !== strpos($item, 'AS')) {
+                            list($rawColumn, $rawAlias) = explode('AS', $item);
+                        } else {
+                            $rawColumn = $item;
+                            $rawAlias = '';
+                        }
+
+                        $newSelect[] = empty($rawAlias) ?
+                            $this->getAdapter()->getQuotedName(trim($rawColumn)) :
+                            $this->getAdapter()->getQuotedName(trim($rawColumn)).' AS '.$this->getAdapter()->getQuotedName(trim($rawAlias));
+                    }
+                    $value = implode(', ', $newSelect);
+                } else {
+                    $value = $this->getAdapter()->getQuotedName($column);
+                }
+            }
+            $select[] = $value;
+        }
+
+        return $selectSql.implode(', ', $select);
+    }
+
+
+
+    /**
+     * @param $columns
+     * @param null $options
+     *
+     * @return string
+     */
+    public function sqlOrderBy($columns, $options = null)
+    {
+        if (empty($columns)) {
+            return '';
+        }
+
+        if (is_string($columns)) {
+            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
+            $quotedColumns = array_map(function ($column) {
+                $temp = explode(' ', $column);
+                if (2 == count($temp)) {
+                    return $this->getAdapter()->getQuotedName($temp[0]).' '.$temp[1];
+                }
+
+                return $this->getAdapter()->getQuotedName($column);
+            }, $columns);
+
+            return implode(', ', $quotedColumns);
+        }
+
+        $order = [];
+        foreach ($columns as $key => $column) {
+            if (is_numeric($key)) {
+                if (0 === strpos($column, '-', 0)) {
+                    $column = substr($column, 1);
+                    $direction = 'DESC';
+                } else {
+                    $direction = 'ASC';
+                }
+            } else {
+                $direction = $column;
+                $column = $key;
+            }
+
+            $order[] = $this->getAdapter()->getQuotedName($column).' '.$direction;
+        }
+
+        return implode(', ', $order).(empty($options) ? '' : ' '.$options);
     }
 
     public function select($select, $distinct = null)
@@ -452,9 +581,9 @@ class QueryBuilder implements QueryBuilderInterface
         if (is_string($joinType) && empty($tableName)) {
             $this->_join[] = $this->getAdapter()->quoteSql($joinType);
         } elseif ($tableName instanceof self) {
-            $this->_join[] = $this->getAdapter()->sqlJoin($joinType, $tableName, $on, $alias);
+            $this->_join[] = $this->sqlJoin($joinType, $tableName, $on, $alias);
         } else {
-            $this->_join[$tableName] = $this->getAdapter()->sqlJoin($joinType, $tableName, $on, $alias);
+            $this->_join[$tableName] = $this->sqlJoin($joinType, $tableName, $on, $alias);
             $this->_joinAlias[$tableName] = $alias;
         }
 
@@ -569,7 +698,7 @@ class QueryBuilder implements QueryBuilderInterface
                     } elseif (null === $value || 'null' === $value) {
                         $value = 'NULL';
                     } elseif (is_string($value)) {
-                        $value = $this->getAdapter()->quoteValue($value);
+                        $value = $this->connection->quote($value);
                     }
 
                     $record[] = $value;
@@ -595,7 +724,7 @@ class QueryBuilder implements QueryBuilderInterface
             } elseif (null === $value || 'null' === $value) {
                 $value = 'NULL';
             } elseif (is_string($value)) {
-                $value = $this->getAdapter()->quoteValue($value);
+                $value = $this->connection->quote($value);
             }
 
             return $value;
@@ -909,7 +1038,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function buildHaving()
     {
-        return $this->getAdapter()->sqlHaving($this->_having, $this);
+        return $this->sqlHaving($this->_having, $this);
     }
 
     /**
@@ -929,10 +1058,46 @@ class QueryBuilder implements QueryBuilderInterface
         $sql = '';
         foreach ($this->_union as $part) {
             list($union, $all) = $part;
-            $sql .= ' '.$this->getAdapter()->sqlUnion($union, $all);
+            $sql .= ' '.$this->sqlUnion($union, $all);
         }
 
         return empty($sql) ? '' : $sql;
+    }
+
+    /**
+     * @param $joinType string
+     * @param $tableName string
+     * @param $on string|array
+     * @param $alias string
+     *
+     * @return string
+     */
+    public function sqlJoin($joinType, $tableName, $on, $alias)
+    {
+        if (is_string($tableName)) {
+            $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);
+        } elseif ($tableName instanceof QueryBuilder) {
+            $tableName = $tableName->toSQL();
+        }
+
+        $onSQL = [];
+        if (is_string($on)) {
+            $onSQL[] = $this->getAdapter()->quoteSql($on);
+        } else {
+            foreach ($on as $leftColumn => $rightColumn) {
+                if ($rightColumn instanceof Expression) {
+                    $onSQL[] = $this->getAdapter()->getQuotedName($leftColumn).'='.$this->getAdapter()->quoteSql($rightColumn->toSQL());
+                } else {
+                    $onSQL[] = $this->getAdapter()->getQuotedName($leftColumn).'='.$this->getAdapter()->getQuotedName($rightColumn);
+                }
+            }
+        }
+
+        if (false !== strpos($tableName, 'SELECT')) {
+            return $joinType.' ('.$this->getAdapter()->quoteSql($tableName).')'.(empty($alias) ? '' : ' AS '.$this->getAdapter()->getQuotedName($alias)).' ON '.implode(',', $onSQL);
+        }
+
+        return $joinType.' '.$this->getAdapter()->getQuotedName($tableName).(empty($alias) ? '' : ' AS '.$this->getAdapter()->getQuotedName($alias)).' ON '.implode(',', $onSQL);
     }
 
     public function getSchema()
@@ -1098,14 +1263,81 @@ class QueryBuilder implements QueryBuilderInterface
             $order = $this->buildOrderJoin($this->_order);
         }
 
-        $sql = $this->getAdapter()->sqlOrderBy($order, $this->_orderOptions);
+        $sql = $this->sqlOrderBy($order, $this->_orderOptions);
 
         return empty($sql) ? '' : ' ORDER BY '.$sql;
     }
 
+    /**
+     * @param $having
+     * @param QueryBuilder $qb
+     *
+     * @return string
+     */
+    public function sqlHaving($having, QueryBuilder $qb)
+    {
+        if (empty($having)) {
+            return '';
+        }
+
+        if ($having instanceof Q) {
+            $sql = $having->toSQL($qb);
+        } else {
+            $sql = $this->quoteSql($having);
+        }
+
+        return empty($sql) ? '' : ' HAVING '.$sql;
+    }
+
+    /**
+     * @param $unions
+     *
+     * @return string
+     */
+    public function sqlUnion($union, $all = false)
+    {
+        if (empty($union)) {
+            return '';
+        }
+
+        if ($union instanceof QueryBuilder) {
+            $unionSQL = $union->order(null)->toSQL();
+        } else {
+            $unionSQL = $this->getAdapter()->quoteSql($union);
+        }
+
+        return ($all ? 'UNION ALL' : 'UNION').' ('.$unionSQL.')';
+    }
+
+    /**
+     * @param $columns
+     *
+     * @return string
+     */
+    public function sqlGroupBy($columns)
+    {
+        if (empty($columns)) {
+            return '';
+        }
+
+        if (is_string($columns)) {
+            $quotedColumns = array_map(function ($column) {
+                return $this->getAdapter()->getQuotedName($column);
+            }, explode(',', $columns));
+
+            return implode(', ', $quotedColumns);
+        }
+        $group = [];
+        foreach ($columns as $column) {
+            $group[] = $this->getAdapter()->getQuotedName($column);
+        }
+
+        return implode(', ', $group);
+    }
+
     public function buildGroup()
     {
-        $sql = $this->getAdapter()->sqlGroupBy($this->_group);
+        $sql = $this->sqlGroupBy($this->_group);
 
         return empty($sql) ? '' : ' GROUP BY '.$sql;
     }

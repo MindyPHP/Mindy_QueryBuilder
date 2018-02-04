@@ -56,19 +56,6 @@ class Adapter extends BaseAdapter
     }
 
     /**
-     * @param $tableName
-     * @param $value
-     *
-     * @return string
-     *
-     * @internal param $sequenceName
-     */
-    public function sqlResetSequence($tableName, $value)
-    {
-        return 'ALTER TABLE ' . $this->getQuotedName($tableName) . ' AUTO_INCREMENT=' . (int)$value;
-    }
-
-    /**
      * @param bool $check
      * @param string $schema
      * @param string $table

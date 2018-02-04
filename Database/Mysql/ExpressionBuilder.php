@@ -25,7 +25,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
         return $this->comparison(
             $this->getQuotedName($x),
             'REGEXP',
-            $adapter->quoteValue((string) $y)
+            $this->connection->quote((string) $y)
         );
     }
 
@@ -38,7 +38,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
         $sql = $this->comparison(
             $this->getQuotedName($x),
             'REGEXP',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
 
         return 'BINARY '.$sql;
@@ -48,7 +48,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(SECOND FROM '.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -56,7 +56,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(YEAR FROM '.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -64,7 +64,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(MINUTE FROM '.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -72,7 +72,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(HOUR FROM '.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -80,7 +80,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(DAY FROM '.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -88,7 +88,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(MONTH FROM '.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -96,7 +96,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'DAYOFWEEK('.$this->getQuotedName($x).')',
-            $adapter->quoteValue((string) WeekDayFormat::format($y))
+            $this->literal((string) WeekDayFormat::format($y))
         );
     }
 
@@ -112,7 +112,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
                 $result[] = call_user_func_array([$this, $method], [
                     $adapter,
-                    sprintf('JSON_EXTRACT(%s, %s)', $this->getQuotedName($x), $adapter->quoteValue('$.'.$name)),
+                    sprintf('JSON_EXTRACT(%s, %s)', $this->getQuotedName($x), $this->literal('$.'.$name)),
                     $value,
                 ]);
             }

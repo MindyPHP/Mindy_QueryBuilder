@@ -173,7 +173,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         } elseif (false !== strpos((string) $y, 'SELECT')) {
             $sqlValue = '('.$y.')';
         } else {
-            $sqlValue = $adapter->quoteValue($y);
+            $sqlValue = $this->literal($y);
         }
 
         return $this->eq(
@@ -188,7 +188,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->gte(
             $this->getQuotedName($x),
-            $adapter->quoteValue($y)
+            $this->literal($y)
         );
     }
 
@@ -198,7 +198,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->gt(
             $this->getQuotedName($x),
-            $adapter->quoteValue($y)
+            $this->literal($y)
         );
     }
 
@@ -208,7 +208,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->lte(
             $this->getQuotedName($x),
-            $adapter->quoteValue($y)
+            $this->literal($y)
         );
     }
 
@@ -218,7 +218,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->lt(
             $this->getQuotedName($x),
-            $adapter->quoteValue($y)
+            $this->literal($y)
         );
     }
 
@@ -231,8 +231,8 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         return $this->between(
             $this->getQuotedName($x),
             [
-                $adapter->quoteValue($minValue),
-                $adapter->quoteValue($maxValue)
+                $this->literal($minValue),
+                $this->literal($maxValue)
             ]
         );
     }
@@ -246,7 +246,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->neq(
             $this->getQuotedName($x),
-            $adapter->quoteValue($y)
+            $this->literal($y)
         );
     }
 
@@ -267,7 +267,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->like(
             $this->getQuotedName($x),
-            $adapter->quoteValue('%'.$y.'%')
+            $this->literal('%'.$y.'%')
         );
     }
 
@@ -279,7 +279,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->like(
             'LOWER('.$this->getQuotedName($x).')',
-            $adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8').'%')
+            $this->literal('%'.mb_strtolower((string) $y, 'UTF-8').'%')
         );
     }
 
@@ -291,7 +291,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->like(
             $this->getQuotedName($x),
-            $adapter->quoteValue((string) $y.'%')
+            $this->literal((string) $y.'%')
         );
     }
 
@@ -303,7 +303,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->like(
             'LOWER('.$this->getQuotedName($x).')',
-            $adapter->quoteValue(mb_strtolower((string) $y, 'UTF-8').'%')
+            $this->literal(mb_strtolower((string) $y, 'UTF-8').'%')
         );
     }
 
@@ -315,7 +315,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->like(
             $this->getQuotedName($x),
-            $adapter->quoteValue('%'.(string) $y)
+            $this->literal('%'.(string) $y)
         );
     }
 
@@ -327,7 +327,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
         return $this->like(
             'LOWER('.$this->getQuotedName($x).')',
-            $adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8'))
+            $this->literal('%'.mb_strtolower((string) $y, 'UTF-8'))
         );
     }
 
@@ -335,7 +335,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     {
         if (is_array($y)) {
             $quotedValues = array_map(function ($item) use ($adapter) {
-                return $adapter->quoteValue($item);
+                return $this->literal($item);
             }, $y);
             $sqlValue = implode(', ', $quotedValues);
         } elseif ($y instanceof ToSqlInterface) {
@@ -357,5 +357,24 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
             $this->getQuotedName($x),
             $adapter->quoteSql($y)
         );
+    }
+
+    /**
+     * Quotes a given input parameter.
+     *
+     * @param mixed       $input The parameter to be quoted.
+     * @param string|null $type  The type of the parameter.
+     *
+     * @return string
+     */
+    public function literal($input, $type = null)
+    {
+        // TODO remove
+        if (!is_string($input)) {
+            return $input;
+        }
+        // TODO remove
+
+        return $this->connection->quote($input, $type);
     }
 }

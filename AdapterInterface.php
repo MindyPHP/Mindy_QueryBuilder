@@ -26,23 +26,9 @@ interface AdapterInterface
     public function getBoolean($value = null);
 
     /**
-     * @param null $value
-     *
-     * @return mixed
-     */
-    public function getTimestamp($value = null);
-
-    /**
      * @param string $sql
      *
      * @return string
      */
     public function quoteSql(string $sql): string;
-
-    /**
-     * @param $value
-     *
-     * @return string
-     */
-    public function quoteValue($value);
 }

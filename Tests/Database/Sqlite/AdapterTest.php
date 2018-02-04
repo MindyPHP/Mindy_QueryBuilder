@@ -27,7 +27,6 @@ class AdapterTest extends BaseTest
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
 
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
-        $this->assertSame('UPDATE sqlite_sequence SET seq=100 WHERE name=\'foo\'', $adapter->sqlResetSequence('foo', 100));
 
         $this->assertSame('PRAGMA foreign_keys=1', $adapter->sqlCheckIntegrity(true));
         $this->assertSame('PRAGMA foreign_keys=1', $adapter->sqlCheckIntegrity(1));

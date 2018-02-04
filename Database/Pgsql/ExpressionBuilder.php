@@ -20,7 +20,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(SECOND FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -28,7 +28,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(YEAR FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -36,7 +36,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(MINUTE FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -44,7 +44,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(HOUR FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -52,7 +52,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(DAY FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -60,7 +60,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(MONTH FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) $y)
+            $this->literal((string) $y)
         );
     }
 
@@ -68,18 +68,18 @@ class ExpressionBuilder extends BaseExpressionBuilder
     {
         return $this->eq(
             'EXTRACT(DOW FROM '.$this->getQuotedName($x).'::timestamp)',
-            $adapter->quoteValue((string) WeekDayFormat::format($y))
+            $this->literal((string) WeekDayFormat::format($y))
         );
     }
 
     protected function lookupRegex(AdapterInterface $adapter, string $x, $y): string
     {
-        return $this->comparison($this->getQuotedName($x), '~', $adapter->quoteValue($y));
+        return $this->comparison($this->getQuotedName($x), '~', $this->literal($y));
     }
 
     protected function lookupIregex(AdapterInterface $adapter, string $x, $y): string
     {
-        return $this->comparison($this->getQuotedName($x), '~*', $adapter->quoteValue($y));
+        return $this->comparison($this->getQuotedName($x), '~*', $this->literal($y));
     }
 
     protected function lookupContains(AdapterInterface $adapter, string $x, $y): string
@@ -90,7 +90,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->like(
             $this->getQuotedName($x).'::text',
-            $adapter->quoteValue('%'.(string) $y.'%')
+            $this->literal('%'.(string) $y.'%')
         );
     }
 
@@ -102,7 +102,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->like(
             'LOWER('.$this->getQuotedName($x).'::text)',
-            $adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8').'%')
+            $this->literal('%'.mb_strtolower((string) $y, 'UTF-8').'%')
         );
     }
 
@@ -114,7 +114,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->like(
             $this->getQuotedName($x).'::text',
-            $adapter->quoteValue((string) $y.'%')
+            $this->literal((string) $y.'%')
         );
     }
 
@@ -126,7 +126,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->like(
             'LOWER('.$this->getQuotedName($x).'::text)',
-            $adapter->quoteValue(mb_strtolower((string) $y, 'UTF-8').'%')
+            $this->literal(mb_strtolower((string) $y, 'UTF-8').'%')
         );
     }
 
@@ -138,7 +138,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->like(
             $this->getQuotedName($x).'::text',
-            $adapter->quoteValue('%'.(string) $y)
+            $this->literal('%'.(string) $y)
         );
     }
 
@@ -150,7 +150,7 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
         return $this->like(
             'LOWER('.$this->getQuotedName($x).'::text)',
-            $adapter->quoteValue('%'.mb_strtolower((string) $y, 'UTF-8'))
+            $this->literal('%'.mb_strtolower((string) $y, 'UTF-8'))
         );
     }
 

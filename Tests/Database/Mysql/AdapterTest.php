@@ -38,7 +38,6 @@ class AdapterTest extends BaseTest
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
 
         $this->assertSame('RAND()', $adapter->getRandomOrder());
-        $this->assertSame('ALTER TABLE foo AUTO_INCREMENT=100', $adapter->sqlResetSequence('foo', 100));
 
         $this->assertSame('SET FOREIGN_KEY_CHECKS = 1', $adapter->sqlCheckIntegrity(true));
         $this->assertSame('SET FOREIGN_KEY_CHECKS = 1', $adapter->sqlCheckIntegrity(1));

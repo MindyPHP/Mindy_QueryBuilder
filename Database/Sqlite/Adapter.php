@@ -58,17 +58,6 @@ class Adapter extends BaseAdapter
     }
 
     /**
-     * @param $sequenceName
-     * @param $value
-     *
-     * @return string
-     */
-    public function sqlResetSequence($sequenceName, $value = null)
-    {
-        return 'UPDATE sqlite_sequence SET seq='.$this->quoteValue($value).' WHERE name='.$this->quoteValue($sequenceName);
-    }
-
-    /**
      * @param bool   $check
      * @param string $schema
      * @param string $table
