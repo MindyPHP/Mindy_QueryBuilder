@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Tests;
 
+use Mindy\QueryBuilder\Utils\TableNameResolver;
+
 class OtherTest extends BaseTest
 {
     public function testConvertToDbValue()
@@ -49,8 +51,8 @@ class OtherTest extends BaseTest
 
     public function testRawTableName()
     {
-        $this->assertEquals('test', $this->getAdapter()->getRawTableName('{{%test}}'));
-        $this->assertEquals('test', $this->getAdapter()->getRawTableName('test'));
+        $this->assertEquals('test', TableNameResolver::getTableName('{{%test}}'));
+        $this->assertEquals('test', TableNameResolver::getTableName('test'));
     }
 
     public function testInsert()

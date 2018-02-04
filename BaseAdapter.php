@@ -52,16 +52,6 @@ abstract class BaseAdapter implements AdapterInterface
     abstract public function getLookupCollection();
 
     /**
-     * @param $name
-     *
-     * @return string
-     */
-    public function getRawTableName($name): string
-    {
-        return TableNameResolver::getTableName($name, $this->getTablePrefix());
-    }
-
-    /**
      * @return Connection
      */
     public function getConnection()
@@ -164,7 +154,7 @@ abstract class BaseAdapter implements AdapterInterface
 
     public function sqlUpdate($tableName, array $columns)
     {
-        $tableName = $this->getRawTableName($tableName);
+        $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);
         $parts = [];
         foreach ($columns as $column => $value) {
             if ($value instanceof ToSqlInterface) {
@@ -229,34 +219,6 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
-     * @param $tableName
-     * @param array $columns
-     * @param null  $options
-     * @param bool  $ifNotExists
-     *
-     * @return string
-     */
-    public function sqlCreateTable($tableName, $columns, $options = null, $ifNotExists = false)
-    {
-        $tableName = $this->getRawTableName($tableName);
-        if (is_array($columns)) {
-            $cols = [];
-            foreach ($columns as $name => $type) {
-                if (is_string($name)) {
-                    $cols[] = "\t".$this->getQuotedName($name).' '.$type;
-                } else {
-                    $cols[] = "\t".$type;
-                }
-            }
-            $sql = ($ifNotExists ? 'CREATE TABLE IF NOT EXISTS ' : 'CREATE TABLE ').$this->getQuotedName($tableName)." (\n".implode(",\n", $cols)."\n)";
-        } else {
-            $sql = ($ifNotExists ? 'CREATE TABLE IF NOT EXISTS ' : 'CREATE TABLE ').$this->getQuotedName($tableName).' '.$this->quoteSql($columns);
-        }
-
-        return empty($options) ? $sql : $sql.' '.$options;
-    }
-
-    /**
      * @param $value
      *
      * @return string
@@ -310,7 +272,7 @@ abstract class BaseAdapter implements AdapterInterface
     public function sqlJoin($joinType, $tableName, $on, $alias)
     {
         if (is_string($tableName)) {
-            $tableName = $this->getRawTableName($tableName);
+            $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);
         } elseif ($tableName instanceof QueryBuilder) {
             $tableName = $tableName->toSQL();
         }

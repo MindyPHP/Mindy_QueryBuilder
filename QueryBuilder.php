@@ -20,6 +20,7 @@ use Mindy\QueryBuilder\Database\Sqlite\Adapter as SqliteAdapter;
 use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Q\QAnd;
+use Mindy\QueryBuilder\Utils\TableNameResolver;
 
 class QueryBuilder implements QueryBuilderInterface
 {
@@ -937,7 +938,7 @@ class QueryBuilder implements QueryBuilderInterface
 //            $this->_aliasesCount += 1;
 //        }
         return strtr('{table}_{count}', [
-            '{table}' => $this->getAdapter()->getRawTableName($table),
+            '{table}' => TableNameResolver::getTableName($table),
             '{count}' => $this->_aliasesCount + 1,
         ]);
     }
@@ -1086,7 +1087,7 @@ class QueryBuilder implements QueryBuilderInterface
             if ($table instanceof QueryBuilder) {
                 $tableRaw = $table->toSQL();
             } else {
-                $tableRaw = $this->getAdapter()->getRawTableName($table);
+                $tableRaw = TableNameResolver::getTableName($table);
             }
             if (false !== strpos($tableRaw, 'SELECT')) {
                 $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->getAdapter()->getQuotedName($tableAlias));
