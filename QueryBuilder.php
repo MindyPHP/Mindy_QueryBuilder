@@ -516,7 +516,60 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function insert($tableName, $rows)
     {
-        return $this->getAdapter()->generateInsertSQL($tableName, $rows);
+        if (isset($rows[0]) && is_array($rows)) {
+            $columns = array_map(function ($column) {
+                return $this->getAdapter()->getQuotedName($column);
+            }, array_keys($rows[0]));
+
+            $values = [];
+
+            foreach ($rows as $row) {
+                $record = [];
+                foreach ($row as $value) {
+                    if ($value instanceof Expression) {
+                        $value = $value->toSQL();
+                    } elseif (true === $value || 'true' === $value) {
+                        $value = 'TRUE';
+                    } elseif (false === $value || 'false' === $value) {
+                        $value = 'FALSE';
+                    } elseif (null === $value || 'null' === $value) {
+                        $value = 'NULL';
+                    } elseif (is_string($value)) {
+                        $value = $this->getAdapter()->quoteValue($value);
+                    }
+
+                    $record[] = $value;
+                }
+                $values[] = '('.implode(', ', $record).')';
+            }
+
+            $sql = 'INSERT INTO '.$this->getAdapter()->getQuotedName($tableName).' ('.implode(', ', $columns).') VALUES '.implode(', ', $values);
+
+            return $this->getAdapter()->quoteSql($sql);
+        }
+        $columns = array_map(function ($column) {
+            return $this->getAdapter()->getQuotedName($column);
+        }, array_keys($rows));
+
+        $values = array_map(function ($value) {
+            if ($value instanceof Expression) {
+                $value = $value->toSQL();
+            } elseif (true === $value || 'true' === $value) {
+                $value = 'TRUE';
+            } elseif (false === $value || 'false' === $value) {
+                $value = 'FALSE';
+            } elseif (null === $value || 'null' === $value) {
+                $value = 'NULL';
+            } elseif (is_string($value)) {
+                $value = $this->getAdapter()->quoteValue($value);
+            }
+
+            return $value;
+        }, $rows);
+
+        $sql = 'INSERT INTO '.$this->getAdapter()->getQuotedName($tableName).' ('.implode(', ', $columns).') VALUES ('.implode(', ', $values).')';
+
+        return $this->getAdapter()->quoteSql($sql);
     }
 
     /**

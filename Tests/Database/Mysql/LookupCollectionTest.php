@@ -23,7 +23,7 @@ class LookupCollectionTest extends BaseTest
         return [
             ['exact', 'name', new \DateTime(), sprintf("name = '%s'", date('Y-m-d H:i:s'))],
 
-            ['gte', 'from_date', new \DateTime(), sprintf("from_date >= '%s'", date('Y-m-d'))],
+            ['gte', 'from_date', new \DateTime(), sprintf("from_date >= '%s'", date('Y-m-d H:i:s'))],
             ['gte', 'to_datetime', new \DateTime(), sprintf("to_datetime >= '%s'", date('Y-m-d H:i:s'))],
 
             // Test convert \DateTime to string if column type != date or datetime
@@ -92,7 +92,6 @@ class LookupCollectionTest extends BaseTest
     public function testLookups($lookup, $field, $value, $result)
     {
         $c = new ExpressionBuilder($this->connection);
-        $c->setTableName('test');
         $this->assertSame(
             $result,
             $c->process($this->getAdapter(), $lookup, $field, $value)
@@ -107,7 +106,6 @@ class LookupCollectionTest extends BaseTest
         ];
 
         $c = new ExpressionBuilder($this->connection);
-        $c->setTableName('test');
         foreach ($lookups as $lookup) {
             $this->assertTrue($c->has($lookup));
         }

@@ -23,14 +23,6 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
      * @var Connection
      */
     protected $connection;
-    /**
-     * @var \Doctrine\DBAL\Schema\Schema
-     */
-    protected $schema;
-    /**
-     * @var string
-     */
-    protected $tableName;
 
     /**
      * BaseExpressionBuilder constructor.
@@ -40,15 +32,6 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
-        $this->schema = $connection->getSchemaManager()->createSchema();
-    }
-
-    /**
-     * @param string $table
-     */
-    public function setTableName(string $table)
-    {
-        $this->tableName = $table;
     }
 
     /**
@@ -90,35 +73,20 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     }
 
     /**
-     * @param string $x
      * @param $y
      *
      * @throws \Doctrine\DBAL\DBALException
-     * @throws \Doctrine\DBAL\Schema\SchemaException
      *
      * @return mixed|null
      */
-    protected function castToDatabaseValue(string $x, $y)
+    protected function castToDatabaseValue($y)
     {
-        $table = $this->schema->getTable($this->tableName);
-        if ($table->hasColumn($x)) {
-            $type = $table->getColumn($x)->getType();
-
-            if (
-                $type instanceof DateType ||
-                $type instanceof DateTimeType ||
-                $type instanceof DateTimeTzType
-            ) {
-                // if value is mixed and column type is date
-                // convert to \DateTime
-                $y = $this->formatDateTime($y);
-            } elseif ($y instanceof \DateTime) {
-                // if value is datetime, but column not a date or datetime
-                // convert value to string
-                $y = $this->castToDateTime($y);
-            }
-
-            return $type->convertToDatabaseValue($y, $this->connection->getDatabasePlatform());
+        if ($y instanceof \DateTime) {
+            return $this->castToDateTime($y);
+        } else if (gettype($y) === 'boolean') {
+            return $this->castToType($y, Type::BOOLEAN);
+        } else if (is_numeric($y)) {
+            return $this->castToType($y, Type::INTEGER);
         }
 
         return $this->castToType($y, Type::STRING);
@@ -196,7 +164,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupExact(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = $this->castToDatabaseValue($x, $y);
+        $y = $this->castToDatabaseValue($y);
 
         if ($y instanceof Expression) {
             $sqlValue = $y->toSQL();
@@ -216,7 +184,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupGte(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = $this->castToDatabaseValue($x, $y);
+        $y = $this->castToDatabaseValue($y);
 
         return $this->gte(
             $this->getQuotedName($x),
@@ -226,7 +194,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupGt(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = $this->castToDatabaseValue($x, $y);
+        $y = $this->castToDatabaseValue($y);
 
         return $this->gt(
             $this->getQuotedName($x),
@@ -236,7 +204,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupLte(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = $this->castToDatabaseValue($x, $y);
+        $y = $this->castToDatabaseValue($y);
 
         return $this->lte(
             $this->getQuotedName($x),
@@ -246,7 +214,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupLt(AdapterInterface $adapter, string $x, $y): string
     {
-        $y = $this->castToDatabaseValue($x, $y);
+        $y = $this->castToDatabaseValue($y);
 
         return $this->lt(
             $this->getQuotedName($x),
@@ -257,10 +225,15 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     protected function lookupRange(AdapterInterface $adapter, string $x, $y): string
     {
         list($min, $max) = $y;
+        $minValue = $this->castToDatabaseValue($min);
+        $maxValue = $this->castToDatabaseValue($max);
 
         return $this->between(
             $this->getQuotedName($x),
-            [$adapter->quoteValue($min), $adapter->quoteValue($max)]
+            [
+                $adapter->quoteValue($minValue),
+                $adapter->quoteValue($maxValue)
+            ]
         );
     }
 

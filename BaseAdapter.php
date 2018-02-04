@@ -162,70 +162,6 @@ abstract class BaseAdapter implements AdapterInterface
         return is_array($columns) ? implode(', ', $columns) : $columns;
     }
 
-    /**
-     * @param $tableName
-     * @param array $rows
-     *
-     * @return string
-     */
-    public function sqlInsert($tableName, array $rows)
-    {
-        if (isset($rows[0]) && is_array($rows)) {
-            $columns = array_map(function ($column) {
-                return $this->getQuotedName($column);
-            }, array_keys($rows[0]));
-
-            $values = [];
-
-            foreach ($rows as $row) {
-                $record = [];
-                foreach ($row as $value) {
-                    if ($value instanceof Expression) {
-                        $value = $value->toSQL();
-                    } elseif (true === $value || 'true' === $value) {
-                        $value = 'TRUE';
-                    } elseif (false === $value || 'false' === $value) {
-                        $value = 'FALSE';
-                    } elseif (null === $value || 'null' === $value) {
-                        $value = 'NULL';
-                    } elseif (is_string($value)) {
-                        $value = $this->quoteValue($value);
-                    }
-
-                    $record[] = $value;
-                }
-                $values[] = '('.implode(', ', $record).')';
-            }
-
-            $sql = 'INSERT INTO '.$this->getQuotedName($tableName).' ('.implode(', ', $columns).') VALUES '.implode(', ', $values);
-
-            return $this->quoteSql($sql);
-        }
-        $columns = array_map(function ($column) {
-            return $this->getQuotedName($column);
-        }, array_keys($rows));
-
-        $values = array_map(function ($value) {
-            if ($value instanceof Expression) {
-                $value = $value->toSQL();
-            } elseif (true === $value || 'true' === $value) {
-                $value = 'TRUE';
-            } elseif (false === $value || 'false' === $value) {
-                $value = 'FALSE';
-            } elseif (null === $value || 'null' === $value) {
-                $value = 'NULL';
-            } elseif (is_string($value)) {
-                $value = $this->quoteValue($value);
-            }
-
-            return $value;
-        }, $rows);
-
-        $sql = 'INSERT INTO '.$this->getQuotedName($tableName).' ('.implode(', ', $columns).') VALUES ('.implode(', ', $values).')';
-
-        return $this->quoteSql($sql);
-    }
-
     public function sqlUpdate($tableName, array $columns)
     {
         $tableName = $this->getRawTableName($tableName);
@@ -636,24 +572,6 @@ abstract class BaseAdapter implements AdapterInterface
         }
 
         return $selectSql.implode(', ', $select);
-    }
-
-    public function generateInsertSQL($tableName, $values)
-    {
-        return $this->sqlInsert($tableName, $values);
-    }
-
-    public function generateDeleteSQL($from, $where)
-    {
-        return '';
-    }
-
-    public function generateUpdateSQL($tableName, $update, $where)
-    {
-        return strtr('{update}{where}', [
-            '{update}' => $this->sqlUpdate($tableName, $update),
-            '{where}' => $this->sqlWhere($where),
-        ]);
     }
 
     /**
