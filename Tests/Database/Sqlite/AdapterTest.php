@@ -29,10 +29,6 @@ class AdapterTest extends BaseTest
         $this->assertSame('1', $adapter->prepareValue('1'));
         $this->assertSame(1, $adapter->prepareValue(true));
 
-        $this->assertSame(date('Y-m-d'), $adapter->getDate(time()));
-        $this->assertSame(date('Y-m-d'), $adapter->getDate(new \DateTime()));
-        $this->assertSame(date('Y-m-d'), $adapter->getDate());
-
         $this->assertSame('LIMIT -1 OFFSET 10', $adapter->sqlLimitOffset(null, 10));
         $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
 

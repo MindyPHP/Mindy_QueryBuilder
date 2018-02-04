@@ -22,33 +22,50 @@ class LookupCollectionTest extends BaseTest
     {
         return [
             ['exact', 'name', new \DateTime(), sprintf("name = '%s'", date('Y-m-d H:i:s'))],
+
+            ['gte', 'from_date', new \DateTime(), sprintf("from_date >= '%s'", date('Y-m-d'))],
+            ['gte', 'to_datetime', new \DateTime(), sprintf("to_datetime >= '%s'", date('Y-m-d H:i:s'))],
+
+            // Test convert \DateTime to string if column type != date or datetime
             ['gte', 'name', new \DateTime(), sprintf("name >= '%s'", date('Y-m-d H:i:s'))],
             ['lte', 'name', new \DateTime(), sprintf("name <= '%s'", date('Y-m-d H:i:s'))],
             ['lt', 'name', new \DateTime(), sprintf("name < '%s'", date('Y-m-d H:i:s'))],
             ['gt', 'name', new \DateTime(), sprintf("name > '%s'", date('Y-m-d H:i:s'))],
+
+            // Test integer
+            ['gte', 'name', 1, "name >= 1"],
+            ['lte', 'name', 1, "name <= 1"],
+            ['lt', 'name', 1, "name < 1"],
+            ['gt', 'name', 1, "name > 1"],
+
             ['range', 'name', [1, 2], 'name BETWEEN 1 AND 2'],
+
             ['isnt', 'name', null, 'name IS NOT NULL'],
+
             ['in', 'name', [1, 2], 'name IN (1, 2)'],
             ['in', 'name', 1, 'name IN (1)'],
+
             ['contains', 'name', true, "name LIKE '%1%'"],
+
             ['icontains', 'name', 'foo', "LOWER(name) LIKE '%foo%'"],
             ['icontains', 'name', 1, "LOWER(name) LIKE '%1%'"],
             ['icontains', 'name', true, "LOWER(name) LIKE '%1%'"],
+
             ['regex', 'name', 'foo', "BINARY name REGEXP 'foo'"],
             ['regex', 'name', 1, "BINARY name REGEXP '1'"],
             ['regex', 'name', true, "BINARY name REGEXP '1'"],
+
             ['iregex', 'name', 'foo', "name REGEXP 'foo'"],
             ['iregex', 'name', 1, "name REGEXP '1'"],
             ['iregex', 'name', true, "name REGEXP '1'"],
+
             ['second', 'name', 1, "EXTRACT(SECOND FROM name) = '1'"],
             ['minute', 'name', 1, "EXTRACT(MINUTE FROM name) = '1'"],
             ['hour', 'name', 1, "EXTRACT(HOUR FROM name) = '1'"],
             ['year', 'name', 1, "EXTRACT(YEAR FROM name) = '1'"],
             ['month', 'name', 1, "EXTRACT(MONTH FROM name) = '1'"],
             ['day', 'name', 1, "EXTRACT(DAY FROM name) = '1'"],
-            // Monday
             ['week_day', 'name', 1, "DAYOFWEEK(name) = '2'"],
-            // Sunday
             ['week_day', 'name', 7, "DAYOFWEEK(name) = '1'"],
 
             ['json', 'attributes', ['name.foo.bar' => 'bar'], "JSON_EXTRACT(attributes, '$.name.foo.bar') = 'bar'"],
@@ -75,6 +92,7 @@ class LookupCollectionTest extends BaseTest
     public function testLookups($lookup, $field, $value, $result)
     {
         $c = new ExpressionBuilder($this->connection);
+        $c->setTableName('test');
         $this->assertSame(
             $result,
             $c->process($this->getAdapter(), $lookup, $field, $value)
@@ -89,6 +107,7 @@ class LookupCollectionTest extends BaseTest
         ];
 
         $c = new ExpressionBuilder($this->connection);
+        $c->setTableName('test');
         foreach ($lookups as $lookup) {
             $this->assertTrue($c->has($lookup));
         }

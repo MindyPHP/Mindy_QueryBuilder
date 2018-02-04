@@ -211,5 +211,9 @@ class BuildSelectTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->select(null, true);
         $this->assertEquals('SELECT DISTINCT *', $qb->buildSelect());
+
+        $qb = $this->getQueryBuilder();
+        $qb->select('description', true)->from('profile');
+        $this->assertSame('SELECT DISTINCT description FROM profile', $qb->toSQL());
     }
 }

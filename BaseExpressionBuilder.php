@@ -12,6 +12,9 @@ declare(strict_types=1);
 namespace Mindy\QueryBuilder;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Types\DateTimeType;
+use Doctrine\DBAL\Types\DateTimeTzType;
+use Doctrine\DBAL\Types\DateType;
 use Doctrine\DBAL\Types\Type;
 
 class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectionInterface
@@ -20,6 +23,14 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
      * @var Connection
      */
     protected $connection;
+    /**
+     * @var \Doctrine\DBAL\Schema\Schema
+     */
+    protected $schema;
+    /**
+     * @var string
+     */
+    protected $tableName;
 
     /**
      * BaseExpressionBuilder constructor.
@@ -29,6 +40,15 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
+        $this->schema = $connection->getSchemaManager()->createSchema();
+    }
+
+    /**
+     * @param string $table
+     */
+    public function setTableName(string $table)
+    {
+        $this->tableName = $table;
     }
 
     /**
@@ -44,6 +64,74 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
         $platform = $this->connection->getDatabasePlatform();
 
         return Type::getType($type)->convertToDatabaseValue($value, $platform);
+    }
+
+    /**
+     * @param $value
+     *
+     * @return \DateTime
+     */
+    public function formatDateTime($value): \DateTime
+    {
+        if ($value instanceof \DateTime) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            $date = new \DateTime();
+            $date->setTimestamp((int) $value);
+
+            return $date;
+        } elseif (null === $value) {
+            return new \DateTime();
+        } else {
+            return new \DateTime($value);
+        }
+    }
+
+    /**
+     * @param string $x
+     * @param $y
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     * @throws \Doctrine\DBAL\Schema\SchemaException
+     *
+     * @return mixed|null
+     */
+    protected function castToDatabaseValue(string $x, $y)
+    {
+        $table = $this->schema->getTable($this->tableName);
+        if ($table->hasColumn($x)) {
+            $type = $table->getColumn($x)->getType();
+
+            if (
+                $type instanceof DateType ||
+                $type instanceof DateTimeType ||
+                $type instanceof DateTimeTzType
+            ) {
+                // if value is mixed and column type is date
+                // convert to \DateTime
+                $y = $this->formatDateTime($y);
+            } elseif ($y instanceof \DateTime) {
+                // if value is datetime, but column not a date or datetime
+                // convert value to string
+                $y = $this->castToDateTime($y);
+            }
+
+            return $type->convertToDatabaseValue($y, $this->connection->getDatabasePlatform());
+        }
+
+        return $this->castToType($y, Type::STRING);
+    }
+
+    protected function castToDate($value)
+    {
+        return $this->castToType($this->formatDateTime($value), Type::DATE);
+    }
+
+    protected function castToDateTime($value)
+    {
+        return $this->castToType($this->formatDateTime($value), Type::DATETIME);
     }
 
     /**
@@ -108,14 +196,11 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupExact(AdapterInterface $adapter, string $x, $y): string
     {
-        /* @var $adapter \Mindy\QueryBuilder\BaseAdapter */
-        if ($y instanceof \DateTime) {
-            $y = $adapter->getDateTime($y);
-        }
+        $y = $this->castToDatabaseValue($x, $y);
 
         if ($y instanceof Expression) {
             $sqlValue = $y->toSQL();
-        } elseif ($y instanceof QueryBuilder) {
+        } elseif ($y instanceof ToSqlInterface) {
             $sqlValue = '('.$y->toSQL().')';
         } elseif (false !== strpos((string) $y, 'SELECT')) {
             $sqlValue = '('.$y.')';
@@ -131,9 +216,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupGte(AdapterInterface $adapter, string $x, $y): string
     {
-        if ($y instanceof \DateTime) {
-            $y = $adapter->getDateTime($y);
-        }
+        $y = $this->castToDatabaseValue($x, $y);
 
         return $this->gte(
             $this->getQuotedName($x),
@@ -143,9 +226,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupGt(AdapterInterface $adapter, string $x, $y): string
     {
-        if ($y instanceof \DateTime) {
-            $y = $adapter->getDateTime($y);
-        }
+        $y = $this->castToDatabaseValue($x, $y);
 
         return $this->gt(
             $this->getQuotedName($x),
@@ -155,9 +236,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupLte(AdapterInterface $adapter, string $x, $y): string
     {
-        if ($y instanceof \DateTime) {
-            $y = $adapter->getDateTime($y);
-        }
+        $y = $this->castToDatabaseValue($x, $y);
 
         return $this->lte(
             $this->getQuotedName($x),
@@ -167,9 +246,7 @@ class BaseExpressionBuilder extends ExpressionBuilder implements LookupCollectio
 
     protected function lookupLt(AdapterInterface $adapter, string $x, $y): string
     {
-        if ($y instanceof \DateTime) {
-            $y = $adapter->getDateTime($y);
-        }
+        $y = $this->castToDatabaseValue($x, $y);
 
         return $this->lt(
             $this->getQuotedName($x),

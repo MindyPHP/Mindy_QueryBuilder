@@ -52,20 +52,6 @@ abstract class BaseAdapter implements AdapterInterface
     abstract public function getLookupCollection();
 
     /**
-     * Quotes a simple column name for use in a query.
-     * A simple column name should contain the column name only without any prefix.
-     * If the column name is already quoted or is the asterisk character '*', this method will do nothing.
-     *
-     * @param string $name column name
-     *
-     * @return string the properly quoted column name
-     */
-    public function quoteSimpleColumnName($name)
-    {
-        return false !== strpos($name, '"') || '*' === $name ? $name : '"'.$name.'"';
-    }
-
-    /**
      * @param $name
      *
      * @return string
@@ -93,20 +79,6 @@ abstract class BaseAdapter implements AdapterInterface
         }
 
         return $this->getConnection()->quote($str);
-    }
-
-    /**
-     * Quotes a simple table name for use in a query.
-     * A simple table name should contain the table name only without any schema prefix.
-     * If the table name is already quoted, this method will do nothing.
-     *
-     * @param string $name table name
-     *
-     * @return string the properly quoted table name
-     */
-    public function quoteSimpleTableName($name)
-    {
-        return false !== strpos($name, "'") ? $name : "'".$name."'";
     }
 
     /**
@@ -379,51 +351,6 @@ abstract class BaseAdapter implements AdapterInterface
     public function getBoolean($value = null)
     {
         return $this->connection->getDatabasePlatform()->convertBooleans($value);
-    }
-
-    public function formatDateTime($value)
-    {
-        if ($value instanceof \DateTime) {
-            return $value;
-        }
-
-        if (is_numeric($value)) {
-            $date = new \DateTime();
-            $date->setTimestamp((int)$value);
-            return $date;
-        } else if (null === $value) {
-            return new \DateTime();
-        } else {
-            return new \DateTime($value);
-        }
-    }
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDateTime($value = null)
-    {
-        return Type::getType(Type::DATETIME)
-            ->convertToDatabaseValue(
-                $this->formatDateTime($value),
-                $this->connection->getDatabasePlatform()
-            );
-    }
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDate($value = null)
-    {
-        return Type::getType(Type::DATE)
-            ->convertToDatabaseValue(
-                $this->formatDateTime($value),
-                $this->connection->getDatabasePlatform()
-            );
     }
 
     /**

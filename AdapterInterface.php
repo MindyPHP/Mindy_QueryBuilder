@@ -28,20 +28,6 @@ interface AdapterInterface
     /**
      * @param null $value
      *
-     * @return string
-     */
-    public function getDateTime($value = null);
-
-    /**
-     * @param null $value
-     *
-     * @return string
-     */
-    public function getDate($value = null);
-
-    /**
-     * @param null $value
-     *
      * @return mixed
      */
     public function getTimestamp($value = null);
