@@ -30,6 +30,11 @@ class AdapterTest extends BaseTest
         $this->assertSame('true', $adapter->getBoolean(1));
         $this->assertSame('false', $adapter->getBoolean(0));
 
+        $this->assertSame("'1'", $adapter->getSqlType(1));
+        $this->assertSame('true', $adapter->getSqlType(true));
+        $this->assertSame('false', $adapter->getSqlType(false));
+        $this->assertSame('NULL', $adapter->getSqlType(null));
+
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
 
         $this->assertSame('SET CONSTRAINTS ALL IMMEDIATE', $adapter->sqlCheckIntegrity(true));

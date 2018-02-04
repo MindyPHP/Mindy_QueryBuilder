@@ -54,73 +54,73 @@ class BuildSelectTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->select([
             'id', 'root', 'lft', 'rgt',
-            new Expression('[[rgt]]-[[lft]]-1 AS [[move]]'),
+            new Expression('rgt-lft-1 AS move'),
         ]);
-        $this->assertSql('SELECT [[id]], [[root]], [[lft]], [[rgt]], [[rgt]]-[[lft]]-1 AS [[move]]', $qb->buildSelect());
+        $this->assertSame('SELECT id, root, lft, rgt, rgt-lft-1 AS move', $qb->buildSelect());
     }
 
     public function testRaw()
     {
         $qb = $this->getQueryBuilder();
-        $this->assertSql('SELECT [[id]] + 1', $qb->raw('SELECT [[id]] + 1'));
+        $this->assertSame('SELECT id + 1', $qb->raw('SELECT id + 1'));
     }
 
     public function testArray()
     {
         $qb = $this->getQueryBuilder();
         $qb->select(['id', 'name']);
-        $this->assertSql($this->quoteSql('SELECT [[id]], [[name]]'), $qb->buildSelect());
+        $this->assertSame('SELECT id, name', $qb->buildSelect());
     }
 
     public function testString()
     {
         $qb = $this->getQueryBuilder();
         $qb->select('id, name');
-        $this->assertSql('SELECT [[id]], [[name]]', $qb->buildSelect());
+        $this->assertSame('SELECT id, name', $qb->buildSelect());
     }
 
     public function testMultiple()
     {
         $qb = $this->getQueryBuilder();
         $qb->select('id');
-        $this->assertSql('SELECT [[id]]', $qb->buildSelect());
+        $this->assertSame('SELECT id', $qb->buildSelect());
         $qb->select('name');
-        $this->assertSql('SELECT [[name]]', $qb->buildSelect());
+        $this->assertSame('SELECT name', $qb->buildSelect());
     }
 
     public function testStringWithAlias()
     {
         $qb = $this->getQueryBuilder();
         $qb->select('id AS foo, name AS bar');
-        $this->assertSql('SELECT [[id]] AS [[foo]], [[name]] AS [[bar]]', $qb->buildSelect());
+        $this->assertSame('SELECT id AS foo, name AS bar', $qb->buildSelect());
     }
 
     public function testSubSelectString()
     {
         $qb = $this->getQueryBuilder();
-        $qb->select('(SELECT [[id]] FROM [[test]]) AS [[id_list]]');
-        $this->assertSql('SELECT (SELECT [[id]] FROM [[test]]) AS [[id_list]]', $qb->buildSelect());
+        $qb->select('(SELECT id FROM test) AS id_list');
+        $this->assertSame('SELECT (SELECT id FROM test) AS id_list', $qb->buildSelect());
     }
 
     public function testAlias()
     {
         $qb = $this->getQueryBuilder();
         $qb->setAlias('test1')->select(['id'])->from('test');
-        $this->assertSql('SELECT [[test1]].[[id]]', $qb->buildSelect());
+        $this->assertSame('SELECT test1.id', $qb->buildSelect());
     }
 
     public function testAliasBackward()
     {
         $qb = $this->getQueryBuilder();
         $qb->select(['id'])->from('test')->setAlias('test1');
-        $this->assertSql('SELECT [[test1]].[[id]]', $qb->buildSelect());
+        $this->assertSame('SELECT test1.id', $qb->buildSelect());
     }
 
     public function testAliasFromString()
     {
         $qb = $this->getQueryBuilder();
         $qb->select('id')->from('test')->setAlias('test1');
-        $this->assertSql('SELECT [[test1]].[[id]]', $qb->buildSelect());
+        $this->assertSame('SELECT test1.id', $qb->buildSelect());
     }
 
     public function testSubSelect()
@@ -130,8 +130,8 @@ class BuildSelectTest extends BaseTest
 
         $qb = $this->getQueryBuilder();
         $qb->select(['test' => $qbSub->toSQL()]);
-        $this->assertSql(
-            'SELECT (SELECT [[id]] FROM [[test]]) AS [[test]]',
+        $this->assertSame(
+            'SELECT (SELECT id FROM test) AS test',
             $qb->buildSelect()
         );
     }
@@ -143,8 +143,8 @@ class BuildSelectTest extends BaseTest
 
         $qb = $this->getQueryBuilder();
         $qb->select(['id_list' => $qbSub->toSQL()]);
-        $this->assertSql(
-            'SELECT (SELECT [[id]] FROM [[test]]) AS [[id_list]]',
+        $this->assertSame(
+            'SELECT (SELECT id FROM test) AS id_list',
             $qb->buildSelect()
         );
     }
@@ -155,8 +155,8 @@ class BuildSelectTest extends BaseTest
         $qb->getLookupBuilder()->setJoinCallback(new BuildSelectJoinCallback());
         $qb->select(['user__username'])->from('customer');
 
-        $this->assertSql(
-            'SELECT [[user1]].[[username]] FROM [[customer]] LEFT JOIN [[user]] AS [[user1]] ON [[user1]].[[id]]=[[customer]].[[user_id]]',
+        $this->assertSame(
+            'SELECT user1.username FROM customer LEFT JOIN user AS user1 ON user1.id=customer.user_id',
             $qb->toSQL()
         );
     }
@@ -165,7 +165,7 @@ class BuildSelectTest extends BaseTest
     {
         $qb = $this->getQueryBuilder();
         $qb->select(new Count('*', 'test'));
-        $this->assertSql('SELECT COUNT(*) AS [[test]]', $qb->buildSelect());
+        $this->assertSame('SELECT COUNT(*) AS test', $qb->buildSelect());
 
         $qb = $this->getQueryBuilder();
         $qb->select(new Count('*'));

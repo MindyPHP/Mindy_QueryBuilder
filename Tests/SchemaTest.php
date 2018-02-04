@@ -13,7 +13,5 @@ namespace Mindy\QueryBuilder\Tests;
 
 abstract class SchemaTest extends BaseTest
 {
-    abstract public function testLimitOffset();
-
     abstract public function testRandomOrder();
 }

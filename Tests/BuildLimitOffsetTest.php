@@ -19,7 +19,7 @@ class BuildLimitOffsetTest extends BaseTest
     {
         $qb = $this->getQueryBuilder();
         $qb->limit(10);
-        $this->assertSql('SELECT * LIMIT 10', $qb->toSQL());
+        $this->assertSame('SELECT * LIMIT 10', $qb->toSQL());
     }
 
     public function testLimitOffset()
@@ -27,13 +27,13 @@ class BuildLimitOffsetTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->limit(10);
         $qb->offset(10);
-        $this->assertSql('SELECT * LIMIT 10 OFFSET 10', $qb->toSQL());
+        $this->assertSame('SELECT * LIMIT 10 OFFSET 10', $qb->toSQL());
     }
 
     public function testPaginate()
     {
         $qb = $this->getQueryBuilder();
         $qb->paginate(4, 10);
-        $this->assertSql('SELECT * LIMIT 10 OFFSET 30', $qb->toSQL());
+        $this->assertSame('SELECT * LIMIT 10 OFFSET 30', $qb->toSQL());
     }
 }

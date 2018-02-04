@@ -18,7 +18,7 @@ class BuildUnionTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->select('a, b, c')->from('test');
         $qb->union(clone $qb, true);
-        $this->assertEquals($this->quoteSql('SELECT [[a]], [[b]], [[c]] FROM [[test]] UNION ALL (SELECT [[a]], [[b]], [[c]] FROM [[test]])'), $qb->toSQL());
+        $this->assertEquals('SELECT a, b, c FROM test UNION ALL (SELECT a, b, c FROM test)', $qb->toSQL());
     }
 
     public function testOrder()
@@ -26,8 +26,8 @@ class BuildUnionTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->select('a, b, c')->from('test')->order(['-a']);
         $qb->union(clone $qb, true);
-        $this->assertSql(
-            'SELECT [[a]], [[b]], [[c]] FROM [[test]] UNION ALL (SELECT [[a]], [[b]], [[c]] FROM [[test]]) ORDER BY [[a]] DESC',
+        $this->assertSame(
+            'SELECT a, b, c FROM test UNION ALL (SELECT a, b, c FROM test) ORDER BY a DESC',
             $qb->toSQL()
         );
     }
@@ -36,9 +36,9 @@ class BuildUnionTest extends BaseTest
     {
         $qb = $this->getQueryBuilder();
         $qb->select('a, b, c')->from('test');
-        $qb->union('SELECT [[a]], [[b]], [[c]] FROM [[test]]', true);
-        $this->assertSql(
-            'SELECT [[a]], [[b]], [[c]] FROM [[test]] UNION ALL (SELECT [[a]], [[b]], [[c]] FROM [[test]])',
+        $qb->union('SELECT a, b, c FROM test', true);
+        $this->assertSame(
+            'SELECT a, b, c FROM test UNION ALL (SELECT a, b, c FROM test)',
             $qb->toSQL()
         );
     }

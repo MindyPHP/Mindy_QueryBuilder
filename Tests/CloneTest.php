@@ -30,12 +30,12 @@ class CloneTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $clone = clone $qb;
         $clone->join('LEFT JOIN', 'test', ['id' => 'user_id']);
-        $this->assertSql('', $qb->buildJoin());
+        $this->assertSame('', $qb->buildJoin());
 
         $qb = $this->getQueryBuilder();
         $clone = clone $qb;
         $qb->join('LEFT JOIN', 'test', ['id' => 'user_id']);
-        $this->assertSql('', $clone->buildJoin());
+        $this->assertSame('', $clone->buildJoin());
     }
 
     public function testCloneToSql()
@@ -43,25 +43,25 @@ class CloneTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $clone = clone $qb;
         $clone->join('LEFT JOIN', 'test', ['id' => 'user_id']);
-        $this->assertSql('SELECT *', $qb->toSQL());
+        $this->assertSame('SELECT *', $qb->toSQL());
 
         $qb = $this->getQueryBuilder();
         $clone = clone $qb;
         $qb->join('LEFT JOIN', 'test', ['id' => 'user_id']);
-        $this->assertSql('SELECT *', $clone->toSQL());
+        $this->assertSame('SELECT *', $clone->toSQL());
     }
 
     public function testCloneAfterToSql()
     {
         $qb = $this->getQueryBuilder();
         $qb->join('LEFT JOIN', 'test', ['id' => 'user_id']);
-        $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $qb->buildJoin());
+        $this->assertSame(' LEFT JOIN test ON id=user_id', $qb->buildJoin());
         $sql = $qb->toSQL();
         $clone = clone $qb;
-        $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $qb->buildJoin());
-        $this->assertSql('SELECT * LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $sql);
+        $this->assertSame(' LEFT JOIN test ON id=user_id', $qb->buildJoin());
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $sql);
         $sql = $clone->toSQL();
-        $this->assertSql('SELECT * LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $sql);
+        $this->assertSame('SELECT * LEFT JOIN test ON id=user_id', $sql);
     }
 
     public function testCloneCallback()
@@ -72,6 +72,6 @@ class CloneTest extends BaseTest
         $sql = 'SELECT user_1.* FROM user AS user_1 LEFT JOIN test AS test_1 ON test_1.id=user_1.user_id WHERE (user_1.id = 1)';
 
         $clone = clone $qb;
-        $this->assertSql($sql, $clone->toSQL());
+        $this->assertSame($sql, $clone->toSQL());
     }
 }

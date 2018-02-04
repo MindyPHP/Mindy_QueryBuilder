@@ -58,7 +58,7 @@ class BuildJoinTest extends BaseTest
     {
         $qb = $this->getQueryBuilder();
         $qb->join('LEFT JOIN', 'test', ['main.user_id' => 'test_user.id'], 'test_user');
-        $this->assertSql('LEFT JOIN [[test]] AS [[test_user]] ON [[main]].[[user_id]]=[[test_user]].[[id]]', $qb->buildJoin());
+        $this->assertSame(' LEFT JOIN test AS test_user ON main.user_id=test_user.id', $qb->buildJoin());
         $this->assertTrue($qb->hasJoin('test'));
     }
 
@@ -66,14 +66,14 @@ class BuildJoinTest extends BaseTest
     {
         $qb = $this->getQueryBuilder();
         $qb->join('LEFT JOIN', 'test', ['id' => 'user_id']);
-        $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $qb->buildJoin());
+        $this->assertSame(' LEFT JOIN test ON id=user_id', $qb->buildJoin());
     }
 
     public function testSimpleRaw()
     {
         $qb = $this->getQueryBuilder();
-        $qb->join('LEFT JOIN [[test]] ON [[test]].[[id]] = [[foo]].[[bar_id]]');
-        $this->assertSql('LEFT JOIN [[test]] ON [[test]].[[id]] = [[foo]].[[bar_id]]', $qb->buildJoin());
+        $qb->join('LEFT JOIN test ON test.id = foo.bar_id');
+        $this->assertSame(' LEFT JOIN test ON test.id = foo.bar_id', $qb->buildJoin());
     }
 
     public function testSimpleClone()
@@ -82,7 +82,7 @@ class BuildJoinTest extends BaseTest
         $qb->join('LEFT JOIN', 'test', ['id' => 'user_id']);
 
         $clone = clone $qb;
-        $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $clone->buildJoin());
+        $this->assertSame(' LEFT JOIN test ON id=user_id', $clone->buildJoin());
     }
 
     public function testMultiple()
@@ -90,21 +90,21 @@ class BuildJoinTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->join('LEFT JOIN', 'test', ['id' => 'user_id']);
         $qb->join('INNER JOIN', 'user', ['parent_id' => 'id']);
-        $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]] INNER JOIN [[user]] ON [[parent_id]]=[[id]]', $qb->buildJoin());
+        $this->assertSame(' LEFT JOIN test ON id=user_id INNER JOIN user ON parent_id=id', $qb->buildJoin());
     }
 
     public function testRaw()
     {
         $qb = $this->getQueryBuilder();
-        $qb->joinRaw('LEFT JOIN [[test]] ON [[id]]=[[user_id]]');
-        $this->assertSql('LEFT JOIN [[test]] ON [[id]]=[[user_id]]', $qb->buildJoin());
+        $qb->joinRaw('LEFT JOIN test ON id=user_id');
+        $this->assertSame(' LEFT JOIN test ON id=user_id', $qb->buildJoin());
     }
 
     public function testExpression()
     {
         $qb = $this->getQueryBuilder();
         $qb->join('LEFT JOIN', 'test', ['user_id' => new Expression('1')]);
-        $this->assertSql('LEFT JOIN [[test]] ON [[user_id]]=1', $qb->buildJoin());
+        $this->assertSame(' LEFT JOIN test ON user_id=1', $qb->buildJoin());
     }
 
     public function testJoinSubSelectString()
@@ -113,8 +113,8 @@ class BuildJoinTest extends BaseTest
         $qbSub->from('user')->select('id');
 
         $qb = $this->getQueryBuilder();
-        $this->assertSql(
-            'SELECT [[c]].* FROM [[comment]] AS [[c]] INNER JOIN (SELECT [[id]] FROM [[user]]) AS [[u]] ON [[u]].[[id]]=[[c]].[[user_id]]',
+        $this->assertSame(
+            'SELECT c.* FROM comment AS c INNER JOIN (SELECT id FROM user) AS u ON u.id=c.user_id',
             $qb->select(['c.*'])->from(['c' => 'comment'])
                 ->join('INNER JOIN', $qbSub->toSQL(), ['u.id' => 'c.user_id'], 'u')->toSQL()
         );
@@ -126,8 +126,8 @@ class BuildJoinTest extends BaseTest
         $qbSub->from('user')->select('id');
 
         $qb = $this->getQueryBuilder();
-        $this->assertSql(
-            'SELECT [[c]].* FROM [[comment]] AS [[c]] INNER JOIN (SELECT [[id]] FROM [[user]]) AS [[u]] ON [[u]].[[id]]=[[c]].[[user_id]]',
+        $this->assertSame(
+            'SELECT c.* FROM comment AS c INNER JOIN (SELECT id FROM user) AS u ON u.id=c.user_id',
             $qb->select(['c.*'])->from(['c' => 'comment'])
                 ->join('INNER JOIN', $qbSub, ['u.id' => 'c.user_id'], 'u')->toSQL()
         );
@@ -138,7 +138,7 @@ class BuildJoinTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->getLookupBuilder()->setJoinCallback($this->joinCallback);
         $qb->from('customer')->select(['user__id']);
-        $this->assertSql('LEFT JOIN [[user]] AS [[user_1]] ON [[user_1]].[[id]]=[[customer]].[[user_id]]', $qb->buildJoin());
+        $this->assertSame(' LEFT JOIN user AS user_1 ON user_1.id=customer.user_id', $qb->buildJoin());
     }
 
     public function testSelectAutoJoinAggregation()
@@ -149,8 +149,8 @@ class BuildJoinTest extends BaseTest
             new Min('user__id', 'id_min'),
             new Max('user__id', 'id_max'),
         ]);
-        $this->assertSql('', $qb->buildJoin());
-        $this->assertSql('SELECT MIN([[user_1]].[[id]]) AS [[id_min]], MAX([[user_1]].[[id]]) AS [[id_max]] FROM [[customer]] LEFT JOIN [[user]] AS [[user_1]] ON [[user_1]].[[id]]=[[customer]].[[user_id]]', $qb->toSQL());
-        $this->assertSql('LEFT JOIN [[user]] AS [[user_1]] ON [[user_1]].[[id]]=[[customer]].[[user_id]]', $qb->buildJoin());
+        $this->assertSame('', $qb->buildJoin());
+        $this->assertSame('SELECT MIN(user_1.id) AS id_min, MAX(user_1.id) AS id_max FROM customer LEFT JOIN user AS user_1 ON user_1.id=customer.user_id', $qb->toSQL());
+        $this->assertSame(' LEFT JOIN user AS user_1 ON user_1.id=customer.user_id', $qb->buildJoin());
     }
 }

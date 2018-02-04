@@ -689,16 +689,10 @@ class QueryBuilder implements QueryBuilderInterface
             foreach ($rows as $row) {
                 $record = [];
                 foreach ($row as $value) {
-                    if ($value instanceof Expression) {
+                    if ($value instanceof ToSqlInterface) {
                         $value = $value->toSQL();
-                    } elseif (true === $value || 'true' === $value) {
-                        $value = 'TRUE';
-                    } elseif (false === $value || 'false' === $value) {
-                        $value = 'FALSE';
-                    } elseif (null === $value || 'null' === $value) {
-                        $value = 'NULL';
-                    } elseif (is_string($value)) {
-                        $value = $this->connection->quote($value);
+                    } else {
+                        $value = $this->getAdapter()->getSqlType($value);
                     }
 
                     $record[] = $value;
@@ -715,16 +709,10 @@ class QueryBuilder implements QueryBuilderInterface
         }, array_keys($rows));
 
         $values = array_map(function ($value) {
-            if ($value instanceof Expression) {
+            if ($value instanceof ToSqlInterface) {
                 $value = $value->toSQL();
-            } elseif (true === $value || 'true' === $value) {
-                $value = 'TRUE';
-            } elseif (false === $value || 'false' === $value) {
-                $value = 'FALSE';
-            } elseif (null === $value || 'null' === $value) {
-                $value = 'NULL';
-            } elseif (is_string($value)) {
-                $value = $this->connection->quote($value);
+            } else {
+                $value = $this->getAdapter()->getSqlType($value);
             }
 
             return $value;
@@ -1014,9 +1002,25 @@ class QueryBuilder implements QueryBuilderInterface
         $this->setAlias(null);
 
         return strtr('{update}{where}', [
-            '{update}' => $this->getAdapter()->sqlUpdate($tableName, $values),
+            '{update}' => $this->sqlUpdate($tableName, $values),
             '{where}' => $this->buildWhere(),
         ]);
+    }
+
+    public function sqlUpdate($tableName, array $columns)
+    {
+        $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);
+        $parts = [];
+        foreach ($columns as $column => $value) {
+            if ($value instanceof ToSqlInterface) {
+                $val = $this->getAdapter()->quoteSql($value->toSQL());
+            } else {
+                $val = $this->getAdapter()->getSqlType($value);
+            }
+            $parts[] = $this->getAdapter()->getQuotedName($column).'='.$val;
+        }
+
+        return 'UPDATE '.$this->getAdapter()->getQuotedName($tableName).' SET '.implode(', ', $parts);
     }
 
     /**

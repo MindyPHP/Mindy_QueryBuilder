@@ -39,25 +39,9 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
-     * @return string
-     */
-    public function getTablePrefix()
-    {
-        return $this->tablePrefix;
-    }
-
-    /**
      * @return BaseExpressionBuilder|LookupCollectionInterface
      */
     abstract public function getLookupCollection();
-
-    /**
-     * @return Connection
-     */
-    public function getConnection()
-    {
-        return $this->connection;
-    }
 
     /**
      * TODO remove
@@ -71,7 +55,7 @@ abstract class BaseAdapter implements AdapterInterface
             '/(\\{\\{(%?[\w\-\. ]+%?)\\}\\}|\\[\\[([\w\-\. ]+)\\]\\])|\\@([\w\-\. \/\%\:]+)\\@/',
             function ($matches) use ($tablePrefix) {
                 if (isset($matches[4])) {
-                    return $this->connection->quote($this->convertToDbValue($matches[4]));
+                    return $this->connection->quote($this->getSqlType($matches[4]));
                 } elseif (isset($matches[3])) {
                     return $this->getQuotedName($matches[3]);
                 }
@@ -83,104 +67,19 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
-     * TODO remove
-     *
-     * @param $rawValue
-     * @return string
-     */
-    public function convertToDbValue($rawValue)
-    {
-        if (true === $rawValue || false === $rawValue || 'true' === $rawValue || 'false' === $rawValue) {
-            return $this->getBoolean($rawValue);
-        } elseif ('null' === $rawValue || null === $rawValue) {
-            return 'NULL';
-        }
-
-        return $rawValue;
-    }
-
-    public function sqlUpdate($tableName, array $columns)
-    {
-        $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);
-        $parts = [];
-        foreach ($columns as $column => $value) {
-            if ($value instanceof ToSqlInterface) {
-                $val = $this->quoteSql($value->toSQL());
-            } else {
-                // TODO refact, use getSqlType
-                if ('true' === $value || true === $value) {
-                    $val = 'TRUE';
-                } elseif (null === $value || 'null' === $value) {
-                    $val = 'NULL';
-                } elseif (false === $value || 'false' === $value) {
-                    $val = 'FALSE';
-                } else {
-                    $val = $this->connection->quote($value);
-                }
-            }
-            $parts[] = $this->getQuotedName($column).'='.$val;
-        }
-
-        return 'UPDATE '.$this->getQuotedName($tableName).' SET '.implode(', ', $parts);
-    }
-
-    /**
-     * @param $select
-     * @param $from
-     * @param $where
-     * @param $order
-     * @param $group
-     * @param $limit
-     * @param $offset
-     * @param $join
-     * @param $having
-     * @param $union
-     * @param $distinct
-     *
-     * @return string
-     */
-    public function generateSelectSQL($select, $from, $where, $order, $group, $limit, $offset, $join, $having, $union, $distinct)
-    {
-        if (empty($order)) {
-            $orderColumns = [];
-            $orderOptions = null;
-        } else {
-            list($orderColumns, $orderOptions) = $order;
-        }
-
-        $where = $this->sqlWhere($where);
-        $orderSql = $this->sqlOrderBy($orderColumns, $orderOptions);
-        $unionSql = $this->sqlUnion($union);
-
-        return strtr('{select}{from}{join}{where}{group}{having}{order}{limit_offset}{union}', [
-            '{select}' => $this->sqlSelect($select, $distinct),
-            '{from}' => $this->sqlFrom($from),
-            '{where}' => $where,
-            '{group}' => $this->sqlGroupBy($group),
-            '{order}' => empty($union) ? $orderSql : '',
-            '{having}' => $this->sqlHaving($having),
-            '{join}' => $join,
-            '{limit_offset}' => $this->sqlLimitOffset($limit, $offset),
-            '{union}' => empty($union) ? '' : $unionSql.$orderSql,
-        ]);
-    }
-
-    /**
      * @param $value
      *
      * @return string
      */
     public function getSqlType($value)
     {
-        if ('true' === $value || true === $value) {
-            return 'TRUE';
+        if (gettype($value) === 'boolean') {
+            return $this->getBoolean($value);
         } elseif (null === $value || 'null' === $value) {
             return 'NULL';
-        } elseif (false === $value || 'false' === $value) {
-            return 'FALSE';
         }
 
-        return $value;
+        return $this->connection->quote($value);
     }
 
     /**
@@ -196,20 +95,6 @@ abstract class BaseAdapter implements AdapterInterface
     public function getBoolean($value = null)
     {
         return $this->connection->getDatabasePlatform()->convertBooleans($value);
-    }
-
-    /**
-     * @param $where string|array
-     *
-     * @return string
-     */
-    public function sqlWhere($where)
-    {
-        if (empty($where)) {
-            return '';
-        }
-
-        return ' WHERE '.$this->quoteSql($where);
     }
 
     /**

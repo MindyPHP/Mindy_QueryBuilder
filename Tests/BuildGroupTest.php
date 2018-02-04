@@ -17,7 +17,7 @@ class BuildGroupTest extends BaseTest
     {
         $qb = $this->getQueryBuilder();
         $qb->group(['id', 'name']);
-        $this->assertSql('GROUP BY [[id]], [[name]]', $qb->buildGroup());
+        $this->assertSame(' GROUP BY id, name', $qb->buildGroup());
     }
 
     public function testaddGroupBy()
@@ -25,19 +25,19 @@ class BuildGroupTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb->group(['id']);
         $qb->addGroupBy('name');
-        $this->assertSql('GROUP BY [[id]], [[name]]', $qb->buildGroup());
+        $this->assertSame(' GROUP BY id, name', $qb->buildGroup());
     }
 
     public function testString()
     {
         $qb = $this->getQueryBuilder();
         $qb->group('id, name');
-        $this->assertSql('GROUP BY [[id]], [[name]]', $qb->buildGroup());
+        $this->assertSame(' GROUP BY id, name', $qb->buildGroup());
     }
 
     public function testOrderEmpty()
     {
         $qb = $this->getQueryBuilder();
-        $this->assertSql('', $qb->buildOrder());
+        $this->assertSame('', $qb->buildOrder());
     }
 }

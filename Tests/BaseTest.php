@@ -37,19 +37,4 @@ abstract class BaseTest extends ConnectionAwareTest
     {
         return QueryBuilder::getInstance($this->connection);
     }
-
-    /**
-     * @param $sql
-     *
-     * @return string
-     */
-    protected function quoteSql($sql)
-    {
-        return $this->getAdapter()->quoteSql($sql);
-    }
-
-    protected function assertSql($sql, $actual)
-    {
-        $this->assertEquals($this->quoteSql($sql), trim($actual));
-    }
 }

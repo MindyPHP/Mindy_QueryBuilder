@@ -28,6 +28,11 @@ class AdapterTest extends BaseTest
 
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
 
+        $this->assertSame("'1'", $adapter->getSqlType(1));
+        $this->assertSame(1, $adapter->getSqlType(true));
+        $this->assertSame(0, $adapter->getSqlType(false));
+        $this->assertSame('NULL', $adapter->getSqlType(null));
+
         $this->assertSame('PRAGMA foreign_keys=1', $adapter->sqlCheckIntegrity(true));
         $this->assertSame('PRAGMA foreign_keys=1', $adapter->sqlCheckIntegrity(1));
         $this->assertSame('PRAGMA foreign_keys=0', $adapter->sqlCheckIntegrity(false));
