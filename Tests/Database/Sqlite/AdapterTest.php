@@ -26,9 +26,6 @@ class AdapterTest extends BaseTest
         $adapter = $this->getAdapter();
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
 
-        $this->assertSame('LIMIT -1 OFFSET 10', $adapter->sqlLimitOffset(null, 10));
-        $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
-
         $this->assertSame('RANDOM()', $adapter->getRandomOrder());
         $this->assertSame('UPDATE sqlite_sequence SET seq=100 WHERE name=\'foo\'', $adapter->sqlResetSequence('foo', 100));
 

@@ -72,6 +72,7 @@ abstract class BaseAdapter implements AdapterInterface
     }
 
     /**
+     * TODO remove
      * {@inheritdoc}
      */
     public function quoteSql(string $sql): string
@@ -93,6 +94,12 @@ abstract class BaseAdapter implements AdapterInterface
         );
     }
 
+    /**
+     * TODO remove
+     *
+     * @param $rawValue
+     * @return string
+     */
     public function convertToDbValue($rawValue)
     {
         if (true === $rawValue || false === $rawValue || 'true' === $rawValue || 'false' === $rawValue) {
@@ -102,21 +109,6 @@ abstract class BaseAdapter implements AdapterInterface
         }
 
         return $rawValue;
-    }
-
-    /**
-     * @param int $limit
-     * @param int $offset
-     *
-     * @return string the LIMIT and OFFSET clauses
-     */
-    public function sqlLimitOffset($limit = null, $offset = null)
-    {
-        $qb = $this->getConnection()->createQueryBuilder();
-        $qb->setMaxResults($limit);
-        $qb->setFirstResult($offset);
-
-        return trim(str_replace('SELECT', '', $qb->getSQL()));
     }
 
     /**

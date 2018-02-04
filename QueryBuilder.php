@@ -879,9 +879,16 @@ class QueryBuilder implements QueryBuilderInterface
         return $this->getAdapter()->sqlHaving($this->_having, $this);
     }
 
-    public function buildLimitOffset()
+    /**
+     * @return string
+     */
+    public function buildLimitOffset(): string
     {
-        return $this->getAdapter()->sqlLimitOffset($this->_limit, $this->_offset);
+        $qb = $this->getConnection()->createQueryBuilder();
+        $qb->setMaxResults($this->_limit);
+        $qb->setFirstResult($this->_offset);
+
+        return trim(str_replace('SELECT', '', $qb->getSQL()));
     }
 
     public function buildUnion()

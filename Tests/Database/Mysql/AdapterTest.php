@@ -37,9 +37,6 @@ class AdapterTest extends BaseTest
         $adapter = $this->getAdapter();
         $this->assertInstanceOf(AdapterInterface::class, $adapter);
 
-        $this->assertSame('LIMIT 18446744073709551615 OFFSET 10', $adapter->sqlLimitOffset(null, 10));
-        $this->assertSame('LIMIT 10 OFFSET 10', $adapter->sqlLimitOffset(10, 10));
-
         $this->assertSame('RAND()', $adapter->getRandomOrder());
         $this->assertSame('ALTER TABLE foo AUTO_INCREMENT=100', $adapter->sqlResetSequence('foo', 100));
 
