@@ -13,19 +13,20 @@ namespace Mindy\QueryBuilder\Tests;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Mindy\QueryBuilder\LookupBuilder;
 use Mindy\QueryBuilder\QueryBuilder;
 use Mindy\QueryBuilder\QueryBuilderFactory;
 
 class QueryBuilderFactoryTest extends BaseTest
 {
+    /**
+     * @throws \Mindy\QueryBuilder\Exception\NotSupportedException
+     */
     public function testFactory()
     {
-        $qb = QueryBuilderFactory::getQueryBuilder($this->connection, $this->getAdapter(), new LookupBuilder());
-        $this->assertInstanceOf(QueryBuilder::class, $qb);
-        $this->assertInstanceOf(Connection::class, $qb->getConnection());
-        $this->assertInstanceOf(AbstractPlatform::class, $qb->getDatabasePlatform());
+        $this->assertInstanceOf(
+            QueryBuilder::class,
+            QueryBuilderFactory::getQueryBuilder($this->connection)
+        );
     }
 
     /**

@@ -84,17 +84,12 @@ class QueryBuilder implements QueryBuilderInterface
         'union' => [],
     ];
 
-    public function getConnection()
-    {
-        return $this->connection;
-    }
-
     /**
      * @return \Doctrine\DBAL\Platforms\AbstractPlatform
      */
     public function getDatabasePlatform()
     {
-        return $this->getConnection()->getDatabasePlatform();
+        return $this->connection->getDatabasePlatform();
     }
 
     /**
@@ -899,7 +894,7 @@ class QueryBuilder implements QueryBuilderInterface
     public function buildLimitOffset(): string
     {
         $sql = $this
-            ->getConnection()
+            ->connection
             ->createQueryBuilder()
             ->setMaxResults($this->sqlParts['limit'])
             ->setFirstResult($this->sqlParts['offset']);
