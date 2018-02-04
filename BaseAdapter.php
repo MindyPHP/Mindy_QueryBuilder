@@ -111,39 +111,6 @@ abstract class BaseAdapter implements AdapterInterface
         return $rawValue;
     }
 
-    /**
-     * @param $columns
-     *
-     * @return array|string
-     */
-    public function buildColumns($columns)
-    {
-        if (!is_array($columns)) {
-            if ($columns instanceof Aggregation) {
-                $columns->setFieldsSql($this->buildColumns($columns->getFields()));
-
-                return $this->quoteSql($columns->toSQL());
-            } elseif (false !== strpos($columns, '(')) {
-                return $this->quoteSql($columns);
-            }
-            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
-        }
-        foreach ($columns as $i => $column) {
-            if ($column instanceof Expression) {
-                $columns[$i] = $this->quoteSql($column->toSQL());
-            } elseif (false !== strpos($column, 'AS')) {
-                if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $column, $matches)) {
-                    list(, $rawColumn, $rawAlias) = $matches;
-                    $columns[$i] = $this->getQuotedName($rawColumn).' AS '.$this->getQuotedName($rawAlias);
-                }
-            } elseif (false === strpos($column, '(')) {
-                $columns[$i] = $this->getQuotedName($column);
-            }
-        }
-
-        return is_array($columns) ? implode(', ', $columns) : $columns;
-    }
-
     public function sqlUpdate($tableName, array $columns)
     {
         $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);

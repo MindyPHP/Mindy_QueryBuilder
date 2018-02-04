@@ -255,10 +255,43 @@ class QueryBuilder implements QueryBuilderInterface
             list($alias, $joinColumn) = $newSelect;
             $columns = $alias.'.'.$joinColumn;
         }
-        $fieldsSql = $this->getAdapter()->buildColumns($columns);
+        $fieldsSql = $this->buildColumns($columns);
         $aggregation->setFieldsSql($fieldsSql);
 
         return $this->getAdapter()->quoteSql($aggregation->toSQL());
+    }
+
+    /**
+     * @param $columns
+     *
+     * @return array|string
+     */
+    public function buildColumns($columns)
+    {
+        if (!is_array($columns)) {
+            if ($columns instanceof Aggregation) {
+                $columns->setFieldsSql($this->buildColumns($columns->getFields()));
+
+                return $this->getAdapter()->quoteSql($columns->toSQL());
+            } elseif (false !== strpos($columns, '(')) {
+                return $this->getAdapter()->quoteSql($columns);
+            }
+            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        foreach ($columns as $i => $column) {
+            if ($column instanceof Expression) {
+                $columns[$i] = $this->getAdapter()->quoteSql($column->toSQL());
+            } elseif (false !== strpos($column, 'AS')) {
+                if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $column, $matches)) {
+                    list(, $rawColumn, $rawAlias) = $matches;
+                    $columns[$i] = $this->getAdapter()->getQuotedName($rawColumn).' AS '.$this->getAdapter()->getQuotedName($rawAlias);
+                }
+            } elseif (false === strpos($column, '(')) {
+                $columns[$i] = $this->getAdapter()->getQuotedName($column);
+            }
+        }
+
+        return is_array($columns) ? implode(', ', $columns) : $columns;
     }
 
     /**
