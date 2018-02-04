@@ -930,6 +930,8 @@ class QueryBuilder implements QueryBuilderInterface
      * @param $on string|array
      * @param $alias string
      *
+     * @throws \Doctrine\DBAL\DBALException
+     *
      * @return string
      */
     public function sqlJoin($joinType, $tableName, $on, $alias)
