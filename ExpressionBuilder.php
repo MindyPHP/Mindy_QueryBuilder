@@ -332,7 +332,7 @@ class ExpressionBuilder extends ConditionBuilder implements LookupCollectionInte
     {
         if (is_array($y)) {
             $quotedValues = array_map(function ($item) use ($adapter) {
-                return $this->literal($item);
+                return $this->literal($this->castToDatabaseValue($item));
             }, $y);
             $sqlValue = implode(', ', $quotedValues);
         } elseif ($y instanceof ToSqlInterface) {
