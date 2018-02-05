@@ -21,8 +21,9 @@ class WeekDayFormat
      *
      * @return int
      */
-    public static function format(int $y): int
+    public static function format($y): int
     {
+        $y = (int)$y;
         if ($y < 1 || $y > 7) {
             throw new \LogicException(sprintf(
                 'Incorrect day of week: %s. Available range 1-7 where 1 - monday.',

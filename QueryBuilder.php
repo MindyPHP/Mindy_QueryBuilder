@@ -635,7 +635,7 @@ class QueryBuilder implements QueryBuilderInterface
      *
      * @return $this
      */
-    public function setAlias(string $alias)
+    public function setAlias($alias)
     {
         $this->sqlParts['from']['alias'] = $alias;
 
@@ -828,7 +828,12 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function getSQLForUpdate(): string
     {
-        $table = TableNameResolver::getTableName($this->sqlParts['from']['table'], $this->tablePrefix);
+        $this->setAlias(null);
+
+        $table = TableNameResolver::getTableName(
+            $this->sqlParts['from']['table'],
+            $this->tablePrefix
+        );
 
         $parts = [];
         $rows = $this->sqlParts['values'];
@@ -838,7 +843,7 @@ class QueryBuilder implements QueryBuilderInterface
             } else {
                 $val = $this->getAdapter()->getSqlType($value);
             }
-            $parts[] = $this->getQuotedName($column).'='.$val;
+            $parts[] = $this->getQuotedName($column).' = '.$val;
         }
 
         return sprintf(
@@ -1193,7 +1198,7 @@ class QueryBuilder implements QueryBuilderInterface
 
         if (!empty($this->sqlParts['from']['alias']) && !is_array($this->sqlParts['from']['table'])) {
             $tables = [
-                $this->sqlParts['from']['alias']=> $this->sqlParts['from']['table']
+                $this->sqlParts['from']['alias'] => $this->sqlParts['from']['table'],
             ];
         } else {
             $tables = (array) $this->sqlParts['from']['table'];
