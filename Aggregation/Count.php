@@ -13,7 +13,10 @@ namespace Mindy\QueryBuilder\Aggregation;
 
 class Count extends Aggregation
 {
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return 'COUNT('.parent::toSQL().')'.(empty($this->alias) ? '' : ' AS [['.$this->alias.']]');
     }

@@ -22,10 +22,4 @@ class SchemaTest extends BaseSchemaTest
         $adapter = $this->getQueryBuilder()->getAdapter();
         $this->assertEquals('RANDOM()', $adapter->getRandomOrder());
     }
-
-    public function testLimitOffset()
-    {
-        $sql = $this->getQueryBuilder()->from('profile')->offset(1)->toSQL();
-        $this->assertEquals($this->quoteSql('SELECT * FROM [[profile]] OFFSET 1'), $sql);
-    }
 }

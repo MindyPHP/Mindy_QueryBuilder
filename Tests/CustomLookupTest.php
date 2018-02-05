@@ -18,11 +18,9 @@ use Mindy\QueryBuilder\LookupCollectionInterface;
 class LookupLibrary implements LookupCollectionInterface
 {
     /**
-     * @param $lookup
-     *
-     * @return bool
+     * {@inheritdoc}
      */
-    public function has($lookup)
+    public function has(string $lookup): bool
     {
         return 'foo' === $lookup;
     }
@@ -30,18 +28,18 @@ class LookupLibrary implements LookupCollectionInterface
     /**
      * @param AdapterInterface $adapter
      * @param $lookup
-     * @param $column
-     * @param $value
+     * @param $x
+     * @param $y
      *
      * @throws Exception
      *
      * @return string
      */
-    public function process(AdapterInterface $adapter, $lookup, $column, $value)
+    public function process(AdapterInterface $adapter, $lookup, $x, $y)
     {
         switch ($lookup) {
             case 'foo':
-                return $adapter->quoteColumn($column).' ??? '.$adapter->quoteValue($value);
+                return $adapter->getQuotedName($x).' ??? '.$y;
 
             default:
                 throw new Exception('Unknown lookup: '.$lookup);
@@ -57,6 +55,6 @@ class CustomLookupTest extends BaseTest
         $qb->addLookupCollection(new LookupLibrary());
         list($lookup, $column, $value) = $qb->getLookupBuilder()->parseLookup($qb, 'name__foo', 1);
         $sql = $qb->getLookupBuilder()->runLookup($qb->getAdapter(), $lookup, $column, $value);
-        $this->assertEquals($sql, '`name` ??? 1');
+        $this->assertEquals($sql, 'name ??? 1');
     }
 }

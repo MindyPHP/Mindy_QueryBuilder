@@ -9,15 +9,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Mindy\QueryBuilder\LookupBuilder;
+namespace Mindy\QueryBuilder;
 
 use Exception;
-use Mindy\QueryBuilder\AdapterInterface;
-use Mindy\QueryBuilder\LookupBuilderInterface;
-use Mindy\QueryBuilder\LookupCollectionInterface;
-use Mindy\QueryBuilder\QueryBuilder;
 
-abstract class Base implements LookupBuilderInterface
+class LookupBuilder implements LookupBuilderInterface
 {
     /**
      * @var string
@@ -106,7 +102,10 @@ abstract class Base implements LookupBuilderInterface
         return $this->joinCallback;
     }
 
-    public function fetchColumnName($column)
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchColumnName(string $column)
     {
         if (null === $this->fetchColumnCallback) {
             return $column;
@@ -183,9 +182,79 @@ abstract class Base implements LookupBuilderInterface
 
     /**
      * @param QueryBuilder $queryBuilder
+     * @param $rawLookup
+     * @param $value
+     *
+     * @throws Exception
+     *
+     * @return array|void
+     */
+    public function parseLookup(QueryBuilder $queryBuilder, $rawLookup, $value)
+    {
+        if (substr_count($rawLookup, $this->separator) > 1) {
+            if (empty($this->callback)) {
+                throw new Exception('Unknown lookup: '.$rawLookup);
+            }
+
+            return $this->runCallback($queryBuilder, explode($this->separator, $rawLookup), $value);
+        }
+
+        if (0 == substr_count($rawLookup, $this->separator)) {
+            $rawLookup = $this->fetchColumnName($rawLookup);
+
+            return [$this->default, $rawLookup, $value];
+        }
+        $lookupNodes = explode($this->separator, $rawLookup);
+        if ($this->hasLookup(end($lookupNodes)) && 1 == substr_count($rawLookup, $this->separator)) {
+            list($column, $lookup) = explode($this->separator, $rawLookup);
+            if (false == $this->hasLookup($lookup)) {
+                throw new Exception('Unknown lookup:'.$lookup);
+            }
+            $column = $this->fetchColumnName($column);
+
+            return [$lookup, $column, $value];
+        }
+
+        return $this->runCallback($queryBuilder, $lookupNodes, $value);
+    }
+
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param $lookup
+     *
+     * @return bool|void
+     */
+    public function buildJoin(QueryBuilder $queryBuilder, $lookup)
+    {
+        if (substr_count($lookup, $this->getSeparator()) > 0) {
+            return $this->runJoinCallback($queryBuilder, explode($this->getSeparator(), $lookup));
+        }
+
+        return false;
+    }
+
+    /**
+     * @param QueryBuilder $queryBuilder
      * @param array        $where
      *
-     * @return mixed
+     * @throws Exception
+     *
+     * @return array
      */
-    abstract public function parse(QueryBuilder $queryBuilder, array $where);
+    public function parse(QueryBuilder $queryBuilder, array $where): array
+    {
+        $conditions = [];
+        foreach ($where as $lookup => $value) {
+            /*
+             * Parse new QOr([[username => 1], [username => 2]])
+             */
+            if (is_numeric($lookup) && is_array($value)) {
+                $lookup = key($value);
+                $value = array_shift($value);
+            }
+            $conditions[] = $this->parseLookup($queryBuilder, $lookup, $value);
+        }
+
+        return $conditions;
+    }
 }

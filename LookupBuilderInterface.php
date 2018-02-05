@@ -17,6 +17,7 @@ namespace Mindy\QueryBuilder;
 interface LookupBuilderInterface
 {
     /**
+     * @param QueryBuilder $queryBuilder
      * @param $lookup
      * @param $value
      *
@@ -25,7 +26,8 @@ interface LookupBuilderInterface
     public function parseLookup(QueryBuilder $queryBuilder, $lookup, $value);
 
     /**
-     * @param array $where
+     * @param QueryBuilder $queryBuilder
+     * @param array        $where
      *
      * @return mixed
      */
@@ -54,4 +56,26 @@ interface LookupBuilderInterface
      * @return mixed
      */
     public function runLookup(AdapterInterface $adapter, $lookup, $column, $value);
+
+    /**
+     * @param $callback
+     *
+     * @return $this
+     */
+    public function setJoinCallback($callback);
+
+    /**
+     * @param string $column
+     *
+     * @return mixed
+     */
+    public function fetchColumnName(string $column);
+
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param $lookup
+     *
+     * @return mixed
+     */
+    public function buildJoin(QueryBuilder $queryBuilder, $lookup);
 }

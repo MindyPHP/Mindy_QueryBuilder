@@ -14,83 +14,26 @@ namespace Mindy\QueryBuilder;
 use Doctrine\DBAL\Connection;
 use Exception;
 use Mindy\QueryBuilder\Aggregation\Aggregation;
-use Mindy\QueryBuilder\Database\Mysql\Adapter as MysqlAdapter;
-use Mindy\QueryBuilder\Database\Pgsql\Adapter as PgsqlAdapter;
-use Mindy\QueryBuilder\Database\Sqlite\Adapter as SqliteAdapter;
-use Mindy\QueryBuilder\LookupBuilder\LookupBuilder;
 use Mindy\QueryBuilder\Q\Q;
 use Mindy\QueryBuilder\Q\QAnd;
+use Mindy\QueryBuilder\Utils\TableNameResolver;
 
-class QueryBuilder
+class QueryBuilder implements QueryBuilderInterface
 {
-    const TYPE_SELECT = 'SELECT';
-    const TYPE_UPDATE = 'UPDATE';
-    const TYPE_DELETE = 'DELETE';
+    const SELECT = 'SELECT';
+    const INSERT = 'INSERT';
+    const UPDATE = 'UPDATE';
+    const DELETE = 'DELETE';
 
     /**
-     * @var array|Q|string
+     * @var null|string sql query type SELECT|UPDATE|DELETE
      */
-    private $_whereAnd = [];
-    /**
-     * @var array|Q|string
-     */
-    private $_whereOr = [];
-    /**
-     * @var array|string
-     */
-    private $_join = [];
-    /**
-     * @var array|string
-     */
-    private $_order = [];
-    /**
-     * @var null|string
-     */
-    private $_orderOptions = null;
-    /**
-     * @var array
-     */
-    private $_group = [];
-    /**
-     * @var array|string|\Mindy\QueryBuilder\Aggregation\Aggregation
-     */
-    private $_select = [];
-    /**
-     * @var null|string|array
-     */
-    private $_distinct = null;
-    /**
-     * @var array|string|null
-     */
-    private $_from = null;
-    /**
-     * @var array
-     */
-    private $_union = [];
-    /**
-     * @var null|string|int
-     */
-    private $_limit = null;
-    /**
-     * @var null|string|int
-     */
-    private $_offset = null;
-    /**
-     * @var array
-     */
-    private $_having = [];
+    protected $type = self::SELECT;
+
     /**
      * @var null|string
      */
     private $_alias = null;
-    /**
-     * @var null|string sql query type SELECT|UPDATE|DELETE
-     */
-    private $_type = null;
-    /**
-     * @var array
-     */
-    private $_update = [];
 
     protected $tablePrefix = '';
     /**
@@ -102,62 +45,51 @@ class QueryBuilder
      */
     protected $lookupBuilder;
     /**
-     * @var null
-     */
-    protected $schema;
-    /**
      * Counter of joined tables aliases.
      *
      * @var int
      */
     private $_aliasesCount = 0;
-
+    /**
+     * @var array
+     */
     private $_joinAlias = [];
     /**
      * @var Connection
      */
     protected $connection;
 
-    public function getConnection()
-    {
-        return $this->connection;
-    }
+    /**
+     * @var array the array of SQL parts collected
+     */
+    private $sqlParts = [
+        'select' => [],
+        'from' => [],
+        'distinct' => [],
+        'join' => [],
+        'set' => [],
+        'where' => [
+            'and' => [],
+            'or' => [],
+        ],
+        'groupBy' => [],
+        'having' => null,
+        'limit' => null,
+        'offset' => null,
+        'orderBy' => [
+            'columns' => [],
+            'options' => null,
+        ],
+        'values' => [],
+        'union' => [],
+    ];
 
     /**
      * @return \Doctrine\DBAL\Platforms\AbstractPlatform
      */
     public function getDatabasePlatform()
     {
-        return $this->getConnection()->getDatabasePlatform();
-    }
-
-    /**
-     * @param Connection $connection
-     *
-     * @throws Exception
-     *
-     * @return QueryBuilder
-     */
-    public static function getInstance(Connection $connection)
-    {
-        $driver = $connection->getDriver();
-        switch ($driver->getName()) {
-            case 'pdo_mysql':
-                $adapter = new MysqlAdapter($connection);
-                break;
-            case 'pdo_sqlite':
-                $adapter = new SqliteAdapter($connection);
-                break;
-            case 'pdo_pgsql':
-                $adapter = new PgsqlAdapter($connection);
-                break;
-            default:
-                throw new Exception('Unknown driver');
-        }
-        $lookupBuilder = new LookupBuilder();
-        $lookupBuilder->addLookupCollection($adapter->getLookupCollection());
-
-        return new self($connection, $adapter, $lookupBuilder);
+        return $this->connection->getDatabasePlatform();
     }
 
     /**
@@ -186,49 +118,9 @@ class QueryBuilder
         return $this;
     }
 
-    /**
-     * @return $this
-     */
-    public function setTypeSelect()
-    {
-        $this->_type = self::TYPE_SELECT;
-
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setTypeUpdate()
-    {
-        $this->_type = self::TYPE_UPDATE;
-
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setTypeDelete()
-    {
-        $this->_type = self::TYPE_DELETE;
-
-        return $this;
-    }
-
-    /**
-     * If type is null return TYPE_SELECT.
-     *
-     * @return string
-     */
-    public function getType()
-    {
-        return empty($this->_type) ? self::TYPE_SELECT : $this->_type;
-    }
-
     public function distinct($distinct)
     {
-        $this->_distinct = $distinct;
+        $this->sqlParts['distinct'] = $distinct;
 
         return $this;
     }
@@ -254,40 +146,197 @@ class QueryBuilder
             list($alias, $joinColumn) = $newSelect;
             $columns = $alias.'.'.$joinColumn;
         }
-        $fieldsSql = $this->getAdapter()->buildColumns($columns);
+        $fieldsSql = $this->buildColumns($columns);
         $aggregation->setFieldsSql($fieldsSql);
 
         return $this->getAdapter()->quoteSql($aggregation->toSQL());
     }
 
     /**
-     * @return string
+     * @param $columns
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return array|string
      */
-    public function buildSelect()
+    protected function buildColumns($columns)
     {
-        if (empty($this->_select)) {
-            $this->_select = ['*'];
-        }
+        if (!is_array($columns)) {
+            if ($columns instanceof Aggregation) {
+                $columns->setFieldsSql($this->buildColumns($columns->getFields()));
 
-        $builder = $this->getLookupBuilder();
-        $select = [];
-        foreach ($this->_select as $alias => $column) {
-            if ($column instanceof Aggregation) {
-                $select[$alias] = $this->buildSelectFromAggregation($column);
-            } elseif (is_string($column)) {
-                if (false !== strpos($column, 'SELECT')) {
-                    $select[$alias] = $column;
-                } else {
-                    $select[$alias] = $this->addColumnAlias($builder->fetchColumnName($column));
+                return $this->getAdapter()->quoteSql($columns->toSQL());
+            } elseif (false !== strpos($columns, '(')) {
+                return $this->getAdapter()->quoteSql($columns);
+            }
+            $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        foreach ($columns as $i => $column) {
+            if ($column instanceof Expression) {
+                $columns[$i] = $this->getAdapter()->quoteSql($column->toSQL());
+            } elseif (false !== strpos($column, 'AS')) {
+                if (preg_match('/^(.*?)(?i:\s+as\s+|\s+)([\w\-_\.]+)$/', $column, $matches)) {
+                    list(, $rawColumn, $rawAlias) = $matches;
+                    $columns[$i] = $this->getQuotedName($rawColumn).' AS '.$this->getQuotedName($rawAlias);
                 }
-            } else {
-                $select[$alias] = $column;
+            } elseif (false === strpos($column, '(')) {
+                $columns[$i] = $this->getQuotedName($column);
             }
         }
 
-        return $this->getAdapter()->sqlSelect($select, $this->_distinct);
+        return is_array($columns) ? implode(', ', $columns) : $columns;
     }
 
+    /**
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    protected function buildSelect()
+    {
+        if (empty($this->sqlParts['select'])) {
+            $this->sqlParts['select'] = ['*'];
+        }
+
+        $builder = $this->getLookupBuilder();
+        $columns = [];
+        foreach ($this->sqlParts['select'] as $alias => $column) {
+            if ($column instanceof Aggregation) {
+                $columns[$alias] = $this->buildSelectFromAggregation($column);
+            } elseif (is_string($column)) {
+                if (false !== strpos($column, 'SELECT')) {
+                    $columns[$alias] = $column;
+                } else {
+                    $columns[$alias] = $this->addColumnAlias($builder->fetchColumnName($column));
+                }
+            } else {
+                $columns[$alias] = $column;
+            }
+        }
+
+        $selectSql = $this->sqlParts['distinct'] ? 'SELECT DISTINCT ' : 'SELECT ';
+        if (empty($columns)) {
+            return $selectSql.'*';
+        }
+
+        if (false === is_array($columns)) {
+            $columns = [$columns];
+        }
+
+        $select = [];
+        foreach ($columns as $column => $subQuery) {
+            if ($subQuery instanceof ToSqlInterface) {
+                $subQuery = $subQuery->toSQL();
+            } else {
+                $subQuery = $this->getAdapter()->quoteSql($subQuery);
+            }
+
+            if (is_numeric($column)) {
+                $column = $subQuery;
+                $subQuery = '';
+            }
+
+            if (!empty($subQuery)) {
+                if (false !== strpos($subQuery, 'SELECT')) {
+                    $value = $this->columnAs(
+                        '('.$subQuery.')',
+                        $this->getQuotedName($column)
+                    );
+                } else {
+                    $value = $this->columnAs(
+                        $this->getQuotedName($subQuery),
+                        $this->getQuotedName($column)
+                    );
+                }
+            } else {
+                $value = $this->normalizeColumns($column);
+            }
+            $select[] = $value;
+        }
+
+        return $selectSql.implode(', ', $select);
+    }
+
+    /**
+     * @param string $str
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    public function getQuotedName($str): string
+    {
+        $platform = $this->connection->getDatabasePlatform();
+        $keywords = $platform->getReservedKeywordsList();
+        $parts = explode('.', (string) $str);
+        foreach ($parts as $k => $v) {
+            $parts[$k] = ($keywords->isKeyword($v)) ? $platform->quoteIdentifier($v) : $v;
+        }
+
+        return implode('.', $parts);
+    }
+
+    public function columnAs($x, $y): string
+    {
+        return $x.' AS '.$y;
+    }
+
+    /**
+     * @param string $input
+     *
+     * @return bool
+     */
+    protected function columnHasAlias(string $input): bool
+    {
+        return false !== strpos($input, 'AS');
+    }
+
+    /**
+     * @param string $input
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    protected function normalizeColumn(string $input): string
+    {
+        if ($this->columnHasAlias($input)) {
+            list($rawColumn, $rawAlias) = explode('AS', $input);
+        } else {
+            $rawColumn = $input;
+            $rawAlias = '';
+        }
+
+        $column = $this->getQuotedName(trim($rawColumn));
+
+        return empty($rawAlias) ?
+            $column :
+            $this->columnAs($column, $this->getQuotedName(trim($rawAlias)));
+    }
+
+    /**
+     * @param string $input
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    protected function normalizeColumns(string $input): string
+    {
+        $result = [];
+        foreach (explode(',', $input) as $column) {
+            $result[] = $this->normalizeColumn($column);
+        }
+
+        return implode(', ', $result);
+    }
+
+    /**
+     * @param $select
+     * @param null $distinct
+     *
+     * @return $this
+     */
     public function select($select, $distinct = null)
     {
         if (null !== $distinct) {
@@ -295,8 +344,6 @@ class QueryBuilder
         }
 
         if (empty($select)) {
-            $this->_select = [];
-
             return $this;
         }
 
@@ -327,7 +374,8 @@ class QueryBuilder
         } else {
             $parts[] = $select;
         }
-        $this->_select = $parts;
+
+        $this->sqlParts['select'] = $parts;
 
         return $this;
     }
@@ -339,7 +387,7 @@ class QueryBuilder
      */
     public function from($tableName)
     {
-        $this->_from = $tableName;
+        $this->sqlParts['from'] = $tableName;
 
         return $this;
     }
@@ -351,7 +399,7 @@ class QueryBuilder
      */
     public function hasJoin($alias)
     {
-        return array_key_exists($alias, $this->_join);
+        return array_key_exists($alias, $this->sqlParts['join']);
     }
 
     /**
@@ -362,15 +410,14 @@ class QueryBuilder
      */
     public function paginate($page = 1, $pageSize = 10)
     {
-        $this->limit($pageSize);
-        $this->offset($page > 1 ? $pageSize * ($page - 1) : 0);
-
-        return $this;
+        return $this
+            ->limit($pageSize)
+            ->offset($page > 1 ? $pageSize * ($page - 1) : 0);
     }
 
     public function limit($limit)
     {
-        $this->_limit = $limit;
+        $this->sqlParts['limit'] = $limit;
 
         return $this;
     }
@@ -382,23 +429,23 @@ class QueryBuilder
      */
     public function offset($offset)
     {
-        $this->_offset = $offset;
+        $this->sqlParts['offset'] = $offset;
 
         return $this;
     }
 
     /**
-     * @return LookupBuilderInterface|\Mindy\QueryBuilder\LookupBuilder\LookupBuilder
+     * @return LookupBuilderInterface
      */
-    public function getLookupBuilder()
+    public function getLookupBuilder(): LookupBuilderInterface
     {
         return $this->lookupBuilder;
     }
 
     /**
-     * @return BaseAdapter|SQLGeneratorInterface
+     * @return AdapterInterface
      */
-    public function getAdapter()
+    public function getAdapter(): AdapterInterface
     {
         return $this->adapter;
     }
@@ -416,11 +463,12 @@ class QueryBuilder
     public function join($joinType, $tableName = '', $on = [], $alias = '')
     {
         if (is_string($joinType) && empty($tableName)) {
-            $this->_join[] = $this->getAdapter()->quoteSql($joinType);
+            $this->sqlParts['join'][] = $this->getAdapter()->quoteSql($joinType);
         } elseif ($tableName instanceof self) {
-            $this->_join[] = $this->getAdapter()->sqlJoin($joinType, $tableName, $on, $alias);
+            $this->sqlParts['join'][] = $this->sqlJoin($joinType, $tableName, $on, $alias);
         } else {
-            $this->_join[$tableName] = $this->getAdapter()->sqlJoin($joinType, $tableName, $on, $alias);
+            $this->sqlParts['join'][$tableName] = $this->sqlJoin($joinType, $tableName, $on, $alias);
+
             $this->_joinAlias[$tableName] = $alias;
         }
 
@@ -428,14 +476,13 @@ class QueryBuilder
     }
 
     /**
-     * @param $sql
-     * @param string $alias
+     * @param string $sql
      *
      * @return $this
      */
-    public function joinRaw($sql)
+    public function joinRaw(string $sql)
     {
-        $this->_join[] = $this->getAdapter()->quoteSql($sql);
+        $this->sqlParts['join'][] = $this->getAdapter()->quoteSql($sql);
 
         return $this;
     }
@@ -447,27 +494,14 @@ class QueryBuilder
      */
     public function group($columns)
     {
-        if (is_string($columns)) {
-            $columns = array_map(function ($column) {
-                return trim($column);
-            }, explode(',', $columns));
+        if (false === is_array($columns)) {
+            $columns = explode(',', $columns);
         }
-        $this->_group = $columns;
 
-        return $this;
-    }
-
-    /**
-     * @param string|array $columns columns
-     *
-     * @return $this
-     */
-    public function addGroupBy($columns)
-    {
-        if (!is_array($columns)) {
-            $columns = [$columns];
-        }
-        $this->_group = array_merge($this->_group, $columns);
+        $this->sqlParts['groupBy'] = array_merge(
+            $this->sqlParts['groupBy'],
+            $columns
+        );
 
         return $this;
     }
@@ -480,8 +514,10 @@ class QueryBuilder
      */
     public function order($columns, $options = null)
     {
-        $this->_order = $columns;
-        $this->_orderOptions = $options;
+        $this->sqlParts['orderBy'] = [
+            'columns' => $columns,
+            'options' => $options,
+        ];
 
         return $this;
     }
@@ -493,48 +529,96 @@ class QueryBuilder
      */
     public function clear()
     {
-        $this->_whereAnd = [];
-        $this->_whereOr = [];
-        $this->_join = [];
-        $this->_insert = [];
-        $this->_update = [];
-        $this->_group = [];
-        $this->_order = [];
-        $this->_select = [];
-        $this->_from = '';
-        $this->_union = [];
-        $this->_having = [];
+        $this->type = self::SELECT;
+
+        $this->resetQueryParts();
 
         return $this;
     }
 
     /**
-     * @param $tableName
-     * @param array $rows
-     *
-     * @return $this
+     * @return array
      */
-    public function insert($tableName, $rows)
+    protected function defaultQueryParts(): array
     {
-        return $this->getAdapter()->generateInsertSQL($tableName, $rows);
+        return [
+            'select' => [],
+            'from' => [],
+            'distinct' => [],
+            'join' => [],
+            'set' => [],
+            'where' => [
+                'and' => [],
+                'or' => [],
+            ],
+            'groupBy' => [],
+            'having' => null,
+            'limit' => null,
+            'offset' => null,
+            'orderBy' => [
+                'columns' => [],
+                'options' => null,
+            ],
+            'values' => [],
+            'union' => [],
+        ];
     }
 
     /**
-     * @param $tableName string
-     * @param array $values columns [name => value...]
+     * Resets SQL parts.
      *
-     * @return $this
+     * @return $this this QueryBuilder instance
      */
-    public function update($tableName, array $values)
+    public function resetQueryParts()
     {
-        $this->_update = [$tableName, $values];
+        foreach (array_keys($this->sqlParts) as $key) {
+            $this->resetQueryPart($key);
+        }
 
         return $this;
     }
 
-    public function raw($sql)
+    /**
+     * Resets a single SQL part.
+     *
+     * @param string $queryPartName
+     *
+     * @return $this this QueryBuilder instance
+     */
+    public function resetQueryPart($queryPartName)
     {
-        return $this->getAdapter()->quoteSql($sql);
+        $defaults = $this->defaultQueryParts();
+        $this->sqlParts[$queryPartName] = $defaults[$queryPartName];
+
+        return $this;
+    }
+
+    /**
+     * @param string $table
+     *
+     * @return $this
+     */
+    public function insert(string $table)
+    {
+        $this->type = self::INSERT;
+
+        $this->sqlParts['from'] = $table;
+
+        return $this;
+    }
+
+    /**
+     * @param string $table
+     *
+     * @return $this
+     */
+    public function update(string $table)
+    {
+        $this->type = self::UPDATE;
+
+        $this->sqlParts['from'] = $table;
+
+        return $this;
     }
 
     public function getAlias()
@@ -581,22 +665,25 @@ class QueryBuilder
     {
         $tableAlias = $this->getAlias();
         $parts = [];
+
+        if ($condition instanceof QueryBuilderAwareInterface) {
+            $condition->setQueryBuilder($this);
+        }
+
         if ($condition instanceof Expression) {
             $parts[] = $this->getAdapter()->quoteSql($condition->toSQL());
         } elseif ($condition instanceof Q) {
             $condition->setLookupBuilder($this->getLookupBuilder());
             $condition->setAdapter($this->getAdapter());
             $condition->setTableAlias($tableAlias);
-            $parts[] = $condition->toSQL($this);
-        } elseif ($condition instanceof self) {
+            $parts[] = $condition->toSQL();
+        } elseif ($condition instanceof ToSqlInterface) {
             $parts[] = $condition->toSQL();
         } elseif (is_array($condition)) {
             foreach ($condition as $key => $value) {
                 if ($value instanceof Q) {
                     $parts[] = $this->parseCondition($value);
                 } else {
-                    $value = $this->getAdapter()->prepareValue($value);
-
                     list($lookup, $column, $lookupValue) = $this->lookupBuilder->parseLookup($this, $key, $value);
                     $column = $this->getLookupBuilder()->fetchColumnName($column);
                     if (false === empty($tableAlias) && false === strpos($column, '.')) {
@@ -605,18 +692,6 @@ class QueryBuilder
                     $parts[] = $this->lookupBuilder->runLookup($this->getAdapter(), $lookup, $column, $lookupValue);
                 }
             }
-
-            /*
-            $conditions = $this->lookupBuilder->parse($condition);
-            foreach ($conditions as $key => $value) {
-                list($lookup, $column, $lookupValue) = $value;
-                $column = $this->getLookupBuilder()->fetchColumnName($column);
-                if (empty($tableAlias) === false) {
-                    $column = $tableAlias . '.' . $column;
-                }
-                $parts[] = $this->lookupBuilder->runLookup($this->getAdapter(), $lookup, $column, $lookupValue);
-            }
-            */
         } elseif (is_string($condition)) {
             $parts[] = $condition;
         } elseif ($condition instanceof Expression) {
@@ -657,7 +732,7 @@ class QueryBuilder
      */
     public function where($condition)
     {
-        $this->_whereAnd[] = $condition;
+        $this->sqlParts['where']['and'][] = $condition;
 
         return $this;
     }
@@ -669,7 +744,7 @@ class QueryBuilder
      */
     public function orWhere($condition)
     {
-        $this->_whereOr[] = $condition;
+        $this->sqlParts['where']['or'][] = $condition;
 
         return $this;
     }
@@ -680,7 +755,7 @@ class QueryBuilder
     public function buildWhereTree()
     {
         $where = [];
-        foreach ($this->_whereAnd as $condition) {
+        foreach ($this->sqlParts['where']['and'] as $condition) {
             if (empty($where)) {
                 $where = ['and', $condition];
             } else {
@@ -688,7 +763,7 @@ class QueryBuilder
             }
         }
 
-        foreach ($this->_whereOr as $condition) {
+        foreach ($this->sqlParts['where']['or'] as $condition) {
             if (empty($where)) {
                 $where = ['or', $condition];
             } else {
@@ -699,11 +774,6 @@ class QueryBuilder
         return $where;
     }
 
-    public function getSelect()
-    {
-        return $this->_select;
-    }
-
     public function buildWhere()
     {
         $params = [];
@@ -712,53 +782,11 @@ class QueryBuilder
         return empty($sql) ? '' : ' WHERE '.$sql;
     }
 
-//    protected function prepareJoin()
-//    {
-//        $builder = $this->getLookupBuilder();
-//        if (is_array($this->_select)) {
-//            foreach ($this->_select as $select) {
-//                if (strpos($select, '__') > 0) {
-//                    $builder->buildJoin($select);
-//                }
-//            }
-//        } else {
-//            if (strpos($this->_select, '__') > 0) {
-//                $builder->buildJoin($this->_select);
-//            }
-//        }
-//
-//        foreach ($this->_order as $order) {
-//            $builder->buildJoin($order);
-//        }
-//
-//        foreach ($this->_group as $group) {
-//            $builder->buildJoin($group);
-//        }
-//    }
-
-    private function generateSelectSql()
+    protected function getSQLForSelect(): string
     {
-        // Fetch where conditions before pass it to adapter.
-        // Reason: Dynamic sql build in callbacks
-
-        // $this->prepareJoin();
-
         $where = $this->buildWhere();
         $order = $this->buildOrder();
         $union = $this->buildUnion();
-
-        /*
-        $hasAggregation = false;
-        if (is_array($this->_select)) {
-            foreach ($this->_select as $key => $value) {
-                if ($value instanceof Aggregation) {
-
-                }
-            }
-        } else {
-            $hasAggregation = $this->_select instanceof Aggregation;
-        }
-        */
 
         $select = $this->buildSelect();
         $from = $this->buildFrom();
@@ -775,69 +803,166 @@ class QueryBuilder
             '{order}' => empty($union) ? $order : '',
             '{having}' => $having,
             '{join}' => $join,
-            '{limit_offset}' => $limitOffset ? ' ' . $limitOffset : '',
+            '{limit_offset}' => $limitOffset ? ' '.$limitOffset : '',
             '{union}' => empty($union) ? '' : $union.$order,
         ]);
     }
 
-    public function generateDeleteSql()
+    public function getSQLForDelete(): string
     {
-        return strtr('{delete}{from}{where}', [
-            '{delete}' => 'DELETE',
-            '{from}' => $this->buildFrom(),
-            '{where}' => $this->buildWhere(),
-        ]);
+        return sprintf(
+            'DELETE%s%s',
+            $this->buildFrom(),
+            $this->buildWhere()
+        );
     }
 
-    public function generateUpdateSql()
+    public function getSQLForUpdate(): string
     {
-        list($tableName, $values) = $this->_update;
-        $this->setAlias(null);
+        $table = TableNameResolver::getTableName($this->sqlParts['from'], $this->tablePrefix);
 
-        return strtr('{update}{where}', [
-            '{update}' => $this->getAdapter()->sqlUpdate($tableName, $values),
-            '{where}' => $this->buildWhere(),
-        ]);
+        $parts = [];
+        $rows = $this->sqlParts['values'];
+        foreach (array_shift($rows) as $column => $value) {
+            if ($value instanceof ToSqlInterface) {
+                $val = $this->getAdapter()->quoteSql($value->toSQL());
+            } else {
+                $val = $this->getAdapter()->getSqlType($value);
+            }
+            $parts[] = $this->getQuotedName($column).'='.$val;
+        }
+
+        return sprintf(
+            'UPDATE %s SET %s%s',
+            $this->getQuotedName($table),
+            implode(', ', $parts),
+            $this->buildWhere()
+        );
     }
 
     /**
-     * @throws Exception
+     * Gets the complete SQL string formed by the current specifications of this QueryBuilder.
      *
-     * @return string
+     * <code>
+     *     $qb = $em->createQueryBuilder()
+     *         ->select('u')
+     *         ->from('User', 'u')
+     *     echo $qb->getSQL(); // SELECT u FROM User u
+     * </code>
+     *
+     * @return string the SQL query string
      */
-    public function toSQL()
+    public function toSQL(): string
     {
-        $type = $this->getType();
-        if (self::TYPE_SELECT == $type) {
-            return $this->generateSelectSql();
-        } elseif (self::TYPE_UPDATE == $type) {
-            return $this->generateUpdateSql();
-        } elseif (self::TYPE_DELETE == $type) {
-            return $this->generateDeleteSql();
+        switch ($this->type) {
+            case self::INSERT:
+                $sql = $this->getSQLForInsert();
+                break;
+
+            case self::DELETE:
+                $sql = $this->getSQLForDelete();
+                break;
+
+            case self::UPDATE:
+                $sql = $this->getSQLForUpdate();
+                break;
+
+            case self::SELECT:
+            default:
+                $sql = $this->getSQLForSelect();
+                break;
         }
 
-        throw new Exception('Unknown query type');
+        return $sql;
     }
 
     public function buildHaving()
     {
-        return $this->getAdapter()->sqlHaving($this->_having, $this);
+        if (empty($this->_having)) {
+            return '';
+        }
+
+        if ($this->sqlParts['having'] instanceof Q) {
+            $sql = $this->sqlParts['having']->toSQL();
+        } else {
+            $sql = $this->quoteSql($this->sqlParts['having']);
+        }
+
+        return empty($sql) ? '' : ' HAVING '.$sql;
     }
 
-    public function buildLimitOffset()
+    /**
+     * @return string
+     */
+    public function buildLimitOffset(): string
     {
-        return $this->getAdapter()->sqlLimitOffset($this->_limit, $this->_offset);
+        $sql = $this
+            ->connection
+            ->createQueryBuilder()
+            ->setMaxResults($this->sqlParts['limit'])
+            ->setFirstResult($this->sqlParts['offset']);
+
+        return trim(str_replace('SELECT', '', $sql));
     }
 
     public function buildUnion()
     {
         $sql = '';
-        foreach ($this->_union as $part) {
+        foreach ($this->sqlParts['union'] as $part) {
             list($union, $all) = $part;
-            $sql .= ' '.$this->getAdapter()->sqlUnion($union, $all);
+
+            if (empty($union)) {
+                continue;
+            }
+
+            if ($union instanceof self) {
+                $unionSQL = $union->order(null)->toSQL();
+            } else {
+                $unionSQL = $this->getAdapter()->quoteSql($union);
+            }
+
+            $sql .= ($all ? ' UNION ALL' : ' UNION').' ('.$unionSQL.')';
         }
 
         return empty($sql) ? '' : $sql;
+    }
+
+    /**
+     * @param $joinType string
+     * @param $tableName string
+     * @param $on string|array
+     * @param $alias string
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    public function sqlJoin($joinType, $tableName, $on, $alias)
+    {
+        if (is_string($tableName)) {
+            $tableName = TableNameResolver::getTableName($tableName, $this->tablePrefix);
+        } elseif ($tableName instanceof self) {
+            $tableName = $tableName->toSQL();
+        }
+
+        $onSQL = [];
+        if (is_string($on)) {
+            $onSQL[] = $this->getAdapter()->quoteSql($on);
+        } else {
+            foreach ($on as $leftColumn => $rightColumn) {
+                if ($rightColumn instanceof Expression) {
+                    $onSQL[] = $this->getQuotedName($leftColumn).'='.$this->getAdapter()->quoteSql($rightColumn->toSQL());
+                } else {
+                    $onSQL[] = $this->getQuotedName($leftColumn).'='.$this->getQuotedName($rightColumn);
+                }
+            }
+        }
+
+        if (false !== strpos($tableName, 'SELECT')) {
+            return $joinType.' ('.$this->getAdapter()->quoteSql($tableName).')'.(empty($alias) ? '' : ' AS '.$this->getQuotedName($alias)).' ON '.implode(',', $onSQL);
+        }
+
+        return $joinType.' '.$this->getQuotedName($tableName).(empty($alias) ? '' : ' AS '.$this->getQuotedName($alias)).' ON '.implode(',', $onSQL);
     }
 
     public function getSchema()
@@ -846,20 +971,7 @@ class QueryBuilder
     }
 
     /**
-     * @param $tableName
-     * @param $columns
-     * @param null $options
-     * @param bool $ifNotExists
-     *
-     * @return string
-     */
-    public function createTable($tableName, $columns, $options = null, $ifNotExists = false)
-    {
-        return $this->getAdapter()->sqlCreateTable($tableName, $columns, $options, $ifNotExists);
-    }
-
-    /**
-     * @param array|string|Q $where lookups
+     * @param string|ToSqlInterface $having
      *
      * @return $this
      */
@@ -870,40 +982,17 @@ class QueryBuilder
         }
         $having->setLookupBuilder($this->getLookupBuilder());
         $having->setAdapter($this->getAdapter());
-        $this->_having = $having;
+
+        $this->sqlParts['having'] = $having;
 
         return $this;
     }
 
     public function union($union, $all = false)
     {
-        $this->_union[] = [$union, $all];
+        $this->sqlParts['union'][] = [$union, $all];
 
         return $this;
-    }
-
-    /**
-     * @param $tableName
-     * @param $name
-     * @param $columns
-     *
-     * @return string
-     */
-    public function addPrimaryKey($tableName, $name, $columns)
-    {
-        return $this->getAdapter()->sqlAddPrimaryKey($tableName, $name, $columns);
-    }
-
-    /**
-     * @param $tableName
-     * @param $column
-     * @param $type
-     *
-     * @return string
-     */
-    public function alterColumn($tableName, $column, $type)
-    {
-        return $this->getAdapter()->sqlAlterColumn($tableName, $column, $type);
     }
 
     /**
@@ -920,14 +1009,14 @@ class QueryBuilder
 //            $this->_aliasesCount += 1;
 //        }
         return strtr('{table}_{count}', [
-            '{table}' => $this->getAdapter()->getRawTableName($table),
+            '{table}' => TableNameResolver::getTableName($table),
             '{count}' => $this->_aliasesCount + 1,
         ]);
     }
 
     public function getJoin($tableName)
     {
-        return $this->_join[$tableName];
+        return $this->sqlParts['join'][$tableName];
     }
 
     /**
@@ -964,13 +1053,13 @@ class QueryBuilder
         return $column;
     }
 
-    public function buildJoin()
+    protected function buildJoin()
     {
-        if (empty($this->_join)) {
+        if (empty($this->sqlParts['join'])) {
             return '';
         }
         $join = [];
-        foreach ($this->_join as $part) {
+        foreach ($this->sqlParts['join'] as $part) {
             $join[] = $part;
         }
 
@@ -978,89 +1067,203 @@ class QueryBuilder
     }
 
     /**
-     * @param $order
+     * @param string $order
      *
-     * @return string
+     * @return array
      */
-    protected function buildOrderJoin($order)
+    protected function buildOrderJoin(string $order): array
     {
-        if (false === strpos($order, '-', 0)) {
-            $direction = 'ASC';
-        } else {
-            $direction = 'DESC';
-            $order = substr($order, 1);
-        }
-        $order = $this->getLookupBuilder()->fetchColumnName($order);
-        $newOrder = $this->getLookupBuilder()->buildJoin($this, $order);
+        list($column, $direction) = $this->formatOrderDirection($order);
+
+        $lookupBuilder = $this->getLookupBuilder();
+
+        $column = $lookupBuilder->fetchColumnName($column);
+        $newOrder = $lookupBuilder->buildJoin($this, $column);
         if (false === $newOrder) {
-            return [$order, $direction];
+            return [$column, $direction];
         }
+
         list($alias, $column) = $newOrder;
 
-        return [$alias.'.'.$column, $direction];
+        return [
+            $alias.'.'.$column,
+            $direction,
+        ];
     }
 
-    public function getOrder()
+    /**
+     * @param string $input
+     *
+     * @return array
+     */
+    protected function formatOrderDirection(string $input): array
     {
-        return [$this->_order, $this->_orderOptions];
+        if (0 === strpos($input, '-', 0)) {
+            return [substr($input, 1), 'DESC'];
+        }
+
+        return [$input, 'ASC'];
     }
 
+    protected function prepareOrderFromString(string $input): array
+    {
+        $columns = preg_split('/\s*,\s*/', $input, -1, PREG_SPLIT_NO_EMPTY);
+
+        return array_map(function ($raw) {
+            if (false === strpos($raw, ' ')) {
+                return $this->getQuotedName($raw);
+            }
+
+            list($column, $direction) = explode(' ', $raw);
+
+            return $this->getQuotedName($column).' '.$direction;
+        }, $columns);
+    }
+
+    /**
+     * @return string
+     */
     public function buildOrder()
     {
-        /*
-         * не делать проверку по empty(), проваливается половина тестов с ORDER BY
-         * и проваливается тест с построением JOIN по lookup
-         */
-        if (null === $this->_order) {
+        $orderColumns = $this->sqlParts['orderBy']['columns'];
+        $options = $this->sqlParts['orderBy']['options'];
+
+        if (empty($orderColumns)) {
             return '';
         }
 
         $order = [];
-        if (is_array($this->_order)) {
-            foreach ($this->_order as $column) {
+        if (is_array($orderColumns)) {
+            foreach ($orderColumns as $column) {
                 if ('?' === $column) {
                     $order[] = $this->getAdapter()->getRandomOrder();
                 } else {
                     list($newColumn, $direction) = $this->buildOrderJoin($column);
-                    $order[$this->applyTableAlias($newColumn)] = $direction;
+                    $order[] = $this->applyTableAlias($newColumn).' '.$direction;
                 }
             }
-        } elseif (is_string($this->_order)) {
-            $columns = preg_split('/\s*,\s*/', $this->_order, -1, PREG_SPLIT_NO_EMPTY);
-            $order = array_map(function ($column) {
-                $temp = explode(' ', $column);
-                if (2 == count($temp)) {
-                    return $this->getAdapter()->quoteColumn($temp[0]).' '.$temp[1];
-                }
-
-                return $this->getAdapter()->quoteColumn($column);
-            }, $columns);
-            $order = implode(', ', $order);
+        } elseif (is_string($orderColumns)) {
+            $order = $this->prepareOrderFromString($orderColumns);
         } else {
-            $order = $this->buildOrderJoin($this->_order);
+            $order[] = implode(', ', $this->buildOrderJoin($this->_order));
         }
 
-        $sql = $this->getAdapter()->sqlOrderBy($order, $this->_orderOptions);
+        $sql = implode(', ', $order);
+
+        if (false === empty($options)) {
+            $sql .= $options;
+        }
 
         return empty($sql) ? '' : ' ORDER BY '.$sql;
     }
 
-    public function buildGroup()
+    /**
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    public function buildGroup(): string
     {
-        $sql = $this->getAdapter()->sqlGroupBy($this->_group);
+        if (empty($this->sqlParts['groupBy'])) {
+            return '';
+        }
 
-        return empty($sql) ? '' : ' GROUP BY '.$sql;
+        $group = [];
+        foreach ($this->sqlParts['groupBy'] as $column) {
+            $group[] = $this->getQuotedName(trim($column));
+        }
+
+        return ' GROUP BY '.implode(', ', $group);
     }
 
     public function buildFrom()
     {
-        if (!empty($this->_alias) && !is_array($this->_from)) {
-            $from = [$this->_alias => $this->_from];
-        } else {
-            $from = $this->_from;
+        if (empty($this->sqlParts['from'])) {
+            return '';
         }
-        $sql = $this->getAdapter()->sqlFrom($from);
+
+        if (!empty($this->_alias) && !is_array($this->sqlParts['from'])) {
+            $tables = [$this->_alias => $this->sqlParts['from']];
+        } else {
+            $tables = (array) $this->sqlParts['from'];
+        }
+
+        $quotedTableNames = [];
+        foreach ($tables as $tableAlias => $table) {
+            if ($table instanceof self) {
+                $tableRaw = $table->toSQL();
+            } else {
+                $tableRaw = TableNameResolver::getTableName($table);
+            }
+            if (false !== strpos($tableRaw, 'SELECT')) {
+                $quotedTableNames[] = '('.$tableRaw.')'.(is_numeric($tableAlias) ? '' : ' AS '.$this->getQuotedName($tableAlias));
+            } else {
+                $quotedTableNames[] = $this->getQuotedName($tableRaw).(is_numeric($tableAlias) ? '' : ' AS '.$this->getQuotedName($tableAlias));
+            }
+        }
+
+        $sql = implode(', ', $quotedTableNames);
 
         return empty($sql) ? '' : ' FROM '.$sql;
+    }
+
+    /**
+     * @param string $table
+     *
+     * @return $this
+     */
+    public function delete(string $table)
+    {
+        $this->type = self::DELETE;
+
+        $this->sqlParts['from'] = $table;
+
+        return $this;
+    }
+
+    /**
+     * @param array $values
+     *
+     * @return $this
+     */
+    public function values(array $values)
+    {
+        $this->sqlParts['values'] = is_array(current($values)) ? $values : [$values];
+
+        return $this;
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\DBALException
+     *
+     * @return string
+     */
+    public function getSQLForInsert()
+    {
+        $columns = array_map(function ($column) {
+            return $this->getQuotedName($column);
+        }, array_keys(current($this->sqlParts['values'])));
+
+        $values = [];
+        foreach ($this->sqlParts['values'] as $part) {
+            $record = array_map(function ($value) {
+                if ($value instanceof ToSqlInterface) {
+                    return $value->toSQL();
+                }
+
+                return $this->getAdapter()->getSqlType($value);
+            }, $part);
+
+            $values[] = '('.implode(', ', $record).')';
+        }
+
+        $table = $this->getQuotedName($this->sqlParts['from']);
+
+        return sprintf(
+            'INSERT INTO %s (%s) VALUES %s',
+            $table,
+            implode(', ', $columns),
+            implode(', ', $values)
+        );
     }
 }

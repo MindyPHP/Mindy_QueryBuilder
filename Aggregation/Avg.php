@@ -13,7 +13,10 @@ namespace Mindy\QueryBuilder\Aggregation;
 
 class Avg extends Aggregation
 {
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return 'AVG('.parent::toSQL().')'.(empty($this->alias) ? '' : ' AS [['.$this->alias.']]');
     }

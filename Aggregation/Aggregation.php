@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Aggregation;
 
-use Mindy\QueryBuilder\Expression;
+use Mindy\QueryBuilder\ToSqlInterface;
 
-class Aggregation extends Expression
+class Aggregation implements ToSqlInterface
 {
     protected $alias;
 
@@ -37,7 +37,10 @@ class Aggregation extends Expression
         return $this;
     }
 
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return (empty($this->tableAlias) ? '' : '[['.$this->tableAlias.']].').$this->fieldsSql;
     }

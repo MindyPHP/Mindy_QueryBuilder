@@ -13,7 +13,10 @@ namespace Mindy\QueryBuilder\Aggregation;
 
 class Min extends Aggregation
 {
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return 'MIN('.parent::toSQL().')'.(empty($this->alias) ? '' : ' AS [['.$this->alias.']]');
     }

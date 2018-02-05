@@ -16,8 +16,10 @@ use Mindy\QueryBuilder\AdapterInterface;
 use Mindy\QueryBuilder\Expression;
 use Mindy\QueryBuilder\LookupBuilderInterface;
 use Mindy\QueryBuilder\QueryBuilder;
+use Mindy\QueryBuilder\QueryBuilderAwareInterface;
+use Mindy\QueryBuilder\QueryBuilderInterface;
 
-abstract class Q
+abstract class Q implements QueryBuilderAwareInterface
 {
     /**
      * @var array|string|Q
@@ -36,6 +38,10 @@ abstract class Q
      */
     protected $adapter;
     /**
+     * @var QueryBuilderInterface|null
+     */
+    protected $queryBuilder;
+    /**
      * @var string|null
      */
     private $_tableAlias;
@@ -43,6 +49,14 @@ abstract class Q
     public function __construct($where)
     {
         $this->where = $where;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setQueryBuilder(QueryBuilderInterface $queryBuilder)
+    {
+        $this->queryBuilder = $queryBuilder;
     }
 
     public function setTableAlias($tableAlias)
@@ -64,18 +78,6 @@ abstract class Q
         return $this;
     }
 
-    public function getWhere()
-    {
-        return $this->where;
-    }
-
-    public function addWhere($where)
-    {
-        $this->where[] = $where;
-
-        return $this;
-    }
-
     /**
      * @return string
      */
@@ -85,35 +87,51 @@ abstract class Q
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function toSQL(QueryBuilder $queryBuilder)
+    public function toSQL(): string
     {
-        return $this->parseWhere($queryBuilder);
+        return $this->parseWhere($this->queryBuilder);
     }
 
     /**
+     * @param QueryBuilderInterface $queryBuilder
+     *
+     * @throws Exception
+     *
      * @return string
      */
-    protected function parseWhere(QueryBuilder $queryBuilder)
+    protected function parseWhere(QueryBuilderInterface $queryBuilder)
     {
         return $this->parseConditions($queryBuilder, $this->where);
     }
 
-    private function isWherePart($where)
+    /**
+     * @param $where
+     *
+     * @return bool
+     */
+    private function isWherePart($where): bool
     {
-        return is_array($where) &&
-        array_key_exists('___operator', $where) &&
-        array_key_exists('___where', $where) &&
-        array_key_exists('___condition', $where);
+        if (is_array($where)) {
+            return
+                array_key_exists('___operator', $where) &&
+                array_key_exists('___where', $where) &&
+                array_key_exists('___condition', $where);
+        }
+
+        return false;
     }
 
     /**
-     * @param array $where
+     * @param QueryBuilderInterface $queryBuilder
+     * @param array                 $where
+     *
+     * @throws Exception
      *
      * @return string
      */
-    protected function parseConditions(QueryBuilder $queryBuilder, $where)
+    protected function parseConditions(QueryBuilderInterface $queryBuilder, $where)
     {
         if (empty($where)) {
             return '';
@@ -142,13 +160,15 @@ abstract class Q
     }
 
     /**
+     * @param QueryBuilderInterface $queryBuilder
      * @param $part
+     * @param null $operator
      *
      * @throws Exception
      *
      * @return string
      */
-    protected function parsePart(QueryBuilder $queryBuilder, $part, $operator = null)
+    protected function parsePart(QueryBuilderInterface $queryBuilder, $part, $operator = null)
     {
         if (null === $operator) {
             $operator = $this->getOperator();

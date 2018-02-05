@@ -13,7 +13,10 @@ namespace Mindy\QueryBuilder\Aggregation;
 
 class Max extends Aggregation
 {
-    public function toSQL()
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(): string
     {
         return 'MAX('.parent::toSQL().')'.(empty($this->alias) ? '' : ' AS [['.$this->alias.']]');
     }

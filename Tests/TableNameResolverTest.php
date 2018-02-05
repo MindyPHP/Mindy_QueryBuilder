@@ -11,15 +11,14 @@ declare(strict_types=1);
 
 namespace Mindy\QueryBuilder\Tests;
 
-use Mindy\QueryBuilder\Aggregation\Aggregation;
+use Mindy\QueryBuilder\Utils\TableNameResolver;
 use PHPUnit\Framework\TestCase;
 
-class AggregationTest extends TestCase
+class TableNameResolverTest extends TestCase
 {
-    public function testAlias()
+    public function testTableName()
     {
-        $a = new Aggregation('foo');
-        $a->setTableAlias('bar');
-        $this->assertSame('[[bar]].', $a->toSQL());
+        $this->assertEquals('test', TableNameResolver::getTableName('{{%test}}'));
+        $this->assertEquals('test', TableNameResolver::getTableName('test'));
     }
 }

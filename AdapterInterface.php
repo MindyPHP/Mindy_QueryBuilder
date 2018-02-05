@@ -14,23 +14,14 @@ namespace Mindy\QueryBuilder;
 interface AdapterInterface
 {
     /**
-     * @param $column
-     *
      * @return string
      */
-    public function quoteColumn($column);
+    public function getRandomOrder();
 
     /**
-     * @param $value
+     * @param string $sql
      *
      * @return string
      */
-    public function quoteValue($value);
-
-    /**
-     * @param $tableName
-     *
-     * @return string
-     */
-    public function quoteTableName($tableName);
+    public function quoteSql(string $sql): string;
 }

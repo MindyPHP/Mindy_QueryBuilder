@@ -20,7 +20,7 @@ class ConvertTest extends BaseTest
 
     public function testBoolean()
     {
-        $platform = $this->getConnection()->getDatabasePlatform();
+        $platform = $this->connection->getDatabasePlatform();
         $this->assertInstanceOf(SqlitePlatform::class, $platform);
         $this->assertSame(
             1,

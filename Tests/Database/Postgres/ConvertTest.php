@@ -23,7 +23,7 @@ class ConvertTest extends BaseTest
 
     public function testBoolean()
     {
-        $platform = $this->getConnection()->getDatabasePlatform();
+        $platform = $this->connection->getDatabasePlatform();
         $this->assertInstanceOf(PostgreSqlPlatform::class, $platform);
         $this->assertSame(
             1,
