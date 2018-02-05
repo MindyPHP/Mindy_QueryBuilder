@@ -31,7 +31,7 @@ class QueryBuilderFactory
                 break;
 
             case 'pdo_sqlite':
-                $adapter = new Database\sqlite\Adapter($connection);
+                $adapter = new Database\Sqlite\Adapter($connection);
                 break;
 
             case 'pdo_pgsql':
