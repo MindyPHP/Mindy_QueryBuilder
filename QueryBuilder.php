@@ -571,7 +571,9 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function resetQueryParts()
     {
-        $this->sqlParts = $this->defaultQueryParts();
+        foreach (array_keys($this->sqlParts) as $key) {
+            $this->resetQueryPart($key);
+        }
 
         return $this;
     }
@@ -585,7 +587,8 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function resetQueryPart($queryPartName)
     {
-        $this->sqlParts[$queryPartName] = $this->defaultQueryParts()[$queryPartName];
+        $defaults = $this->defaultQueryParts();
+        $this->sqlParts[$queryPartName] = $defaults[$queryPartName];
 
         return $this;
     }

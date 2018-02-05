@@ -552,6 +552,17 @@ class QueryBuilderTest extends ConnectionAwareTest
         $this->assertSame("SELECT * FROM (SELECT user_id FROM comment WHERE (name = 'foo')) AS t", $sql);
     }
 
+    public function testClear()
+    {
+        $qb = $this
+            ->createBuilder()
+            ->select('a, b, c')
+            ->from('test');
+        $this->assertEquals('SELECT a, b, c FROM test', $qb->toSQL());
+        $qb->clear();
+        $this->assertEquals('SELECT *', $qb->toSQL());
+    }
+
     public function testClone()
     {
         $qb = $this
