@@ -22,15 +22,18 @@ class BuildWhereTest extends BaseTest
     public function testHardSubQuery()
     {
         $subQuery = clone $this->getQueryBuilder();
-        $subQuery->select(['parent_id'])->from('test')->where([
-            'parent_id' => new Expression('id'),
-        ]);
+        $subQuery
+            ->select(['parent_id'])
+            ->table('test')
+            ->where([
+                'parent_id' => new Expression('id'),
+            ]);
         $this->assertSame('SELECT parent_id FROM test WHERE (parent_id = id)', $subQuery->toSQL());
 
         $subQuery = clone $this->getQueryBuilder();
         $subQuery
             ->select(['parent_id'])
-            ->from('test')
+            ->table('test')
             ->setAlias('test_1')
             ->where(['parent_id' => new Expression('test_1.id')]);
         $this->assertSame('SELECT test_1.parent_id FROM test AS test_1 WHERE (test_1.parent_id = test_1.id)', $subQuery->toSQL());
@@ -41,7 +44,7 @@ class BuildWhereTest extends BaseTest
         $subQuery = clone $this->getQueryBuilder();
         $subQuerySql = $subQuery
             ->select(['parent_id'])
-            ->from('test')
+            ->table('test')
             ->setAlias('test_1')
             ->where(['parent_id' => new Expression('test_1.id')])
             ->toSQL();
@@ -53,7 +56,7 @@ class BuildWhereTest extends BaseTest
         $query = clone $this->getQueryBuilder();
         $sql = $query
             ->select(['id', 'root', 'lft', 'rgt', new Expression('test_1.rgt-test_1.lft-1 AS move')])
-            ->from('test')
+            ->table('test')
             ->setAlias('test_1')
             ->where(new QAndNot([
                 'lft' => new Expression('test_1.rgt-1'),
@@ -160,7 +163,10 @@ class BuildWhereTest extends BaseTest
 
         $qb = $this->getQueryBuilder();
         $qb
-            ->from('test')->where(['id' => 2])->orWhere(['id' => 1])->where(['id__isnt' => 3]);
+            ->table('test')
+            ->where(['id' => 2])
+            ->orWhere(['id' => 1])
+            ->where(['id__isnt' => 3]);
         $this->assertSame(' WHERE (((id = 2)) AND ((id <> 3))) OR ((id = 1))', $qb->buildWhere());
     }
 
@@ -251,7 +257,7 @@ class BuildWhereTest extends BaseTest
         $qb = $this->getQueryBuilder();
         $qb
             ->where([
-                'id' => $this->getQueryBuilder()->select('id')->from('test'),
+                'id' => $this->getQueryBuilder()->select('id')->table('test'),
             ]);
         $this->assertSame(' WHERE (id = (SELECT id FROM test))', $qb->buildWhere());
     }

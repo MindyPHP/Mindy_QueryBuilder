@@ -379,13 +379,18 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param $tableName string
+     * @param $table string
+     * @param null $alias
      *
      * @return $this
      */
-    public function from($tableName)
+    public function table($table, $alias = null)
     {
-        $this->sqlParts['from']['table'] = $tableName;
+        $this->sqlParts['from']['table'] = $table;
+
+        if ($alias) {
+            $this->sqlParts['from']['alias'] = $alias;
+        }
 
         return $this;
     }
@@ -595,29 +600,21 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param string $table
-     *
      * @return $this
      */
-    public function insert(string $table)
+    public function insert()
     {
         $this->type = self::INSERT;
-
-        $this->sqlParts['from']['table'] = $table;
 
         return $this;
     }
 
     /**
-     * @param string $table
-     *
      * @return $this
      */
-    public function update(string $table)
+    public function update()
     {
         $this->type = self::UPDATE;
-
-        $this->sqlParts['from']['table'] = $table;
 
         return $this;
     }
@@ -855,16 +852,9 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * Gets the complete SQL string formed by the current specifications of this QueryBuilder.
+     * @throws \Doctrine\DBAL\DBALException
      *
-     * <code>
-     *     $qb = $em->createQueryBuilder()
-     *         ->select('u')
-     *         ->from('User', 'u')
-     *     echo $qb->getSQL(); // SELECT u FROM User u
-     * </code>
-     *
-     * @return string the SQL query string
+     * @return string
      */
     public function toSQL(): string
     {
@@ -1224,15 +1214,11 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param string $table
-     *
      * @return $this
      */
-    public function delete(string $table)
+    public function delete()
     {
         $this->type = self::DELETE;
-
-        $this->sqlParts['from']['table'] = $table;
 
         return $this;
     }

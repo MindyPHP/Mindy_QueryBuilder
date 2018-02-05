@@ -142,7 +142,7 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $builder
             ->select([
-                'foo' => $this->createBuilder()->select(['foo', 'bar'])->from('test'),
+                'foo' => $this->createBuilder()->select(['foo', 'bar'])->table('test'),
             ])
             ->toSQL();
         $this->assertSame('SELECT (SELECT foo, bar FROM test) AS foo', $sql);
@@ -168,7 +168,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $subquerySql = $this
             ->createBuilder()
             ->select('id')
-            ->from('test');
+            ->table('test');
 
         $sql = $this
             ->createBuilder()
@@ -190,7 +190,7 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $qb
             ->select(['user__username'])
-            ->from('customer')
+            ->table('customer')
             ->toSQL();
 
         $this->assertSame(
@@ -261,7 +261,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $sql = $this
             ->createBuilder()
             ->select('description', true)
-            ->from('profile')
+            ->table('profile')
             ->toSQL();
         $this->assertSame('SELECT DISTINCT description FROM profile', $sql);
     }
@@ -272,20 +272,20 @@ class QueryBuilderTest extends ConnectionAwareTest
         $sql = $qb
             ->setAlias('test1')
             ->select(['id'])
-            ->from('test')
+            ->table('test')
             ->toSQL();
         $this->assertSame('SELECT test1.id FROM test AS test1', $sql);
 
         $sql = $qb
             ->select(['id'])
-            ->from('test')
+            ->table('test')
             ->setAlias('test1')
             ->toSQL();
         $this->assertSame('SELECT test1.id FROM test AS test1', $sql);
 
         $sql = $qb
             ->select('id')
-            ->from('test')
+            ->table('test')
             ->setAlias('test1')
             ->toSQL();
         $this->assertSame('SELECT test1.id FROM test AS test1', $sql);
@@ -298,7 +298,8 @@ class QueryBuilderTest extends ConnectionAwareTest
     {
         $sql = $this
             ->createBuilder()
-            ->insert('test')
+            ->insert()
+            ->table('test')
             ->values([
                 ['name' => 'foo', 'price' => 100.05],
                 ['name' => 'bar', 'price' => 95.05],
@@ -308,7 +309,8 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $this
             ->createBuilder()
-            ->insert('test')
+            ->insert()
+            ->table('test')
             ->values([
                 ['foo' => new Expression('1+1')],
             ])
@@ -317,7 +319,8 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $this
             ->createBuilder()
-            ->insert('test')
+            ->insert()
+            ->table('test')
             ->values([
                 'foo' => 'bar',
             ])
@@ -326,7 +329,8 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $this
             ->createBuilder()
-            ->insert('test')
+            ->insert()
+            ->table('test')
             ->values([
                 'foo' => new Expression('1+1'),
             ])
@@ -335,7 +339,8 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $this
             ->createBuilder()
-            ->insert('test')
+            ->insert()
+            ->table('test')
             ->values([
                 ['name' => 'qwe'],
             ])
@@ -344,7 +349,8 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $this
             ->createBuilder()
-            ->insert('test')
+            ->insert()
+            ->table('test')
             ->values([
                 ['name' => 'foo'],
                 ['name' => 'bar'],
@@ -360,62 +366,69 @@ class QueryBuilderTest extends ConnectionAwareTest
     {
         $builder = $this->createBuilder();
         $sql = $builder
-            ->update('test')
+            ->update()
+            ->table('test')
             ->values([
                 'name' => 'foo',
                 'price' => 100.05,
             ])
             ->toSQL();
-        $this->assertSame("UPDATE test SET name='foo', price='100.05'", $sql);
+        $this->assertSame("UPDATE test SET name = 'foo', price = '100.05'", $sql);
 
         $sql = $builder
-            ->update('test')
+            ->update()
+            ->table('test')
             ->values([
                 'name' => 'foo',
                 'price' => new Expression('price + 100'),
             ])
             ->toSQL();
-        $this->assertSame("UPDATE test SET name='foo', price=price + 100", $sql);
+        $this->assertSame("UPDATE test SET name = 'foo', price = price + 100", $sql);
 
         $sql = $this
             ->createBuilder()
             ->where(['id' => 1])
-            ->update('test')
+            ->table('test')
+            ->update()
             ->values(['name' => 'foo'])
             ->toSQL();
-        $this->assertSame("UPDATE test SET name='foo' WHERE (id = 1)", $sql);
+        $this->assertSame("UPDATE test SET name = 'foo' WHERE (id = 1)", $sql);
 
         $sql = $this
             ->createBuilder()
             ->where(['id__gte' => 1])
-            ->update('test')
+            ->update()
+            ->table('test')
             ->values(['name' => 'foo'])
             ->toSQL();
-        $this->assertSame("UPDATE test SET name='foo' WHERE (id >= 1)", $sql);
+        $this->assertSame("UPDATE test SET name = 'foo' WHERE (id >= 1)", $sql);
 
         $sql = $this
             ->createBuilder()
             ->where(['id' => 1])
-            ->update('test')
+            ->table('test')
+            ->update()
             ->values(['id' => new Expression('id+1')])
             ->toSQL();
-        $this->assertSame('UPDATE test SET id=id+1 WHERE (id = 1)', $sql);
+        $this->assertSame('UPDATE test SET id = id+1 WHERE (id = 1)', $sql);
 
         $sql = $this
             ->createBuilder()
             ->where(['id' => 1])
-            ->update('test')
+            ->update()
+            ->table('test')
             ->values(['name' => null])
             ->toSQL();
-        $this->assertSame('UPDATE test SET name=NULL WHERE (id = 1)', $sql);
+        $this->assertSame('UPDATE test SET name = NULL WHERE (id = 1)', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->update('test')
+            ->update()
+            ->table('test')
             ->values(['name' => 'bar'])
             ->where(['name' => 'foo'])
             ->toSQL();
-        $this->assertEquals("UPDATE test SET name='bar' WHERE (name = 'foo')", $sql);
+        $this->assertEquals("UPDATE test SET name = 'bar' WHERE (name = 'foo')", $sql);
     }
 
     /**
@@ -425,7 +438,8 @@ class QueryBuilderTest extends ConnectionAwareTest
     {
         $builder = $this->createBuilder();
         $sql = $builder
-            ->delete('test')
+            ->delete()
+            ->table('test')
             ->where([
                 'name' => 'foo',
                 'price' => 100.05,
@@ -435,7 +449,8 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $sql = $this
             ->createBuilder()
-            ->delete('test')
+            ->delete()
+            ->table('test')
             ->where(['name' => 'qwe'])
             ->toSQL();
         $this->assertEquals("DELETE FROM test WHERE (name = 'qwe')", $sql);
@@ -467,21 +482,21 @@ class QueryBuilderTest extends ConnectionAwareTest
     {
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->order(['id', '-name'])
             ->toSQL();
         $this->assertSame('SELECT * FROM test ORDER BY id ASC, name DESC', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->order('id ASC, name DESC')
             ->toSQL();
         $this->assertSame('SELECT * FROM test ORDER BY id ASC, name DESC', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->order('id, name')
             ->toSQL();
         $this->assertSame('SELECT * FROM test ORDER BY id, name', $sql);
@@ -490,7 +505,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $sql = $this
             ->createBuilder()
             ->select('t.*')
-            ->from(['t' => 'comment'])
+            ->table(['t' => 'comment'])
             ->group(['t.id'])
             ->order(['t.id'])
             ->toSQL();
@@ -501,38 +516,38 @@ class QueryBuilderTest extends ConnectionAwareTest
     {
         $sql = $this
             ->createBuilder()
-            ->from(['test' => 'foo', 'bar'])
+            ->table(['test' => 'foo', 'bar'])
             ->toSQL();
         $this->assertSame('SELECT * FROM foo AS test, bar', $sql);
 
         $sql = $this
             ->createBuilder()
             ->setAlias('test')
-            ->from('foo')
+            ->table('foo')
             ->toSQL();
         $this->assertSame('SELECT test.* FROM foo AS test', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->from(['foo', 'bar'])
+            ->table(['foo', 'bar'])
             ->toSQL();
         $this->assertSame('SELECT * FROM foo, bar', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->toSQL();
         $this->assertSame('SELECT * FROM test', $sql);
 
         $qbSub = $this
             ->createBuilder()
-            ->from(['comment'])
+            ->table(['comment'])
             ->select('user_id')
             ->where(['name' => 'foo']);
 
         $sql = $this
             ->createBuilder()
-            ->from(['t' => $qbSub->toSQL()])
+            ->table(['t' => $qbSub->toSQL()])
             ->toSQL();
         $this->assertSame(
             'SELECT * FROM (SELECT user_id FROM comment WHERE (name = \'foo\')) AS t',
@@ -541,13 +556,13 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $qbSub = $this
             ->createBuilder()
-            ->from(['comment'])
+            ->table(['comment'])
             ->select('user_id')
             ->where(['name' => 'foo']);
 
         $sql = $this
             ->createBuilder()
-            ->from(['t' => $qbSub])
+            ->table(['t' => $qbSub])
             ->toSQL();
         $this->assertSame("SELECT * FROM (SELECT user_id FROM comment WHERE (name = 'foo')) AS t", $sql);
     }
@@ -557,7 +572,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this
             ->createBuilder()
             ->select('a, b, c')
-            ->from('test');
+            ->table('test');
         $this->assertEquals('SELECT a, b, c FROM test', $qb->toSQL());
         $qb->clear();
         $this->assertEquals('SELECT *', $qb->toSQL());
@@ -568,7 +583,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this
             ->createBuilder()
             ->select('a, b, c')
-            ->from('test');
+            ->table('test');
 
         $this->assertEquals('SELECT a, b, c FROM test', $qb->toSQL());
         $this->assertEquals('SELECT a, b, c FROM test', (clone $qb)->toSQL());
@@ -592,7 +607,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this->createBuilder();
         $qb->getLookupBuilder()->setCallback(new CloneCallback());
         $qb
-            ->from('user')
+            ->table('user')
             ->where(['test__id' => 1])
             ->setAlias('user_1');
 
@@ -607,21 +622,21 @@ class QueryBuilderTest extends ConnectionAwareTest
     {
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->join('LEFT JOIN', 'test', ['main.user_id' => 'test_user.id'], 'test_user')
             ->toSQL();
         $this->assertSame('SELECT * FROM test LEFT JOIN test AS test_user ON main.user_id=test_user.id', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->join('LEFT JOIN', 'test', ['id' => 'user_id'])
             ->toSQL();
         $this->assertSame('SELECT * FROM test LEFT JOIN test ON id=user_id', $sql);
 
         $sql = $this
             ->createBuilder()
-            ->from('test')
+            ->table('test')
             ->join('LEFT JOIN test ON test.id = foo.bar_id')
             ->toSQL();
         $this->assertSame('SELECT * FROM test LEFT JOIN test ON test.id = foo.bar_id', $sql);
@@ -654,13 +669,13 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $qbSub = $this
             ->createBuilder()
-            ->from('user')
+            ->table('user')
             ->select('id');
 
         $sql = $this
             ->createBuilder()
             ->select(['c.*'])
-            ->from(['c' => 'comment'])
+            ->table(['c' => 'comment'])
             ->join('INNER JOIN', $qbSub->toSQL(), ['u.id' => 'c.user_id'], 'u')
             ->toSQL();
         $this->assertSame(
@@ -670,13 +685,13 @@ class QueryBuilderTest extends ConnectionAwareTest
 
         $qbSub = $this
             ->createBuilder()
-            ->from('user')
+            ->table('user')
             ->select('id');
 
         $sql = $this
             ->createBuilder()
             ->select(['c.*'])
-            ->from(['c' => 'comment'])
+            ->table(['c' => 'comment'])
             ->join('INNER JOIN', $qbSub, ['u.id' => 'c.user_id'], 'u')
             ->toSQL();
         $this->assertSame(
@@ -687,7 +702,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this->createBuilder();
         $qb->getLookupBuilder()->setJoinCallback(new BuildJoinCallback());
         $sql = $qb
-            ->from('customer')
+            ->table('customer')
             ->select(['user__id'])
             ->toSQL();
         $this->assertSame('SELECT user_1.id FROM customer LEFT JOIN user AS user_1 ON user_1.id=customer.user_id', $sql);
@@ -695,7 +710,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this->createBuilder();
         $qb->getLookupBuilder()->setJoinCallback(new BuildJoinCallback());
         $sql = $qb
-            ->from('customer')
+            ->table('customer')
             ->select([
                 new Aggregation\Min('user__id', 'id_min'),
                 new Aggregation\Max('user__id', 'id_max'),
@@ -712,7 +727,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this
             ->createBuilder()
             ->select('a, b, c')
-            ->from('test');
+            ->table('test');
         $sql = $qb
             ->union(clone $qb, true)
             ->toSQL();
@@ -721,7 +736,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $qb = $this
             ->createBuilder()
             ->select('a, b, c')
-            ->from('test')
+            ->table('test')
             ->order(['-a']);
         $sql = $qb
             ->union(clone $qb, true)
@@ -734,7 +749,7 @@ class QueryBuilderTest extends ConnectionAwareTest
         $sql = $this
             ->createBuilder()
             ->select('a, b, c')
-            ->from('test')
+            ->table('test')
             ->union('SELECT a, b, c FROM test', true)
             ->toSQL();
         $this->assertSame(
