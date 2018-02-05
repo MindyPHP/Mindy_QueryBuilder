@@ -83,7 +83,7 @@ class ExpressionBuilder extends ConditionBuilder implements LookupCollectionInte
         } elseif ('boolean' === gettype($y)) {
             return $this->castToType($y, Type::BOOLEAN);
         } elseif (is_numeric($y)) {
-            return $this->castToType($y, Type::INTEGER);
+            return $this->castToType(gettype($y) === 'double' ? (float)$y : (int)$y, Type::INTEGER);
         }
 
         return $this->castToType($y, Type::STRING);
