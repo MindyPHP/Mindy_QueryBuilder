@@ -30,11 +30,6 @@ class QueryBuilder implements QueryBuilderInterface
      */
     protected $type = self::SELECT;
 
-    /**
-     * @var null|string
-     */
-    private $_alias = null;
-
     protected $tablePrefix = '';
     /**
      * @var BaseAdapter
@@ -64,7 +59,10 @@ class QueryBuilder implements QueryBuilderInterface
      */
     private $sqlParts = [
         'select' => [],
-        'from' => [],
+        'from' => [
+            'table' => null,
+            'alias' => null,
+        ],
         'distinct' => [],
         'join' => [],
         'set' => [],
@@ -387,7 +385,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function from($tableName)
     {
-        $this->sqlParts['from'] = $tableName;
+        $this->sqlParts['from']['table'] = $tableName;
 
         return $this;
     }
@@ -543,7 +541,10 @@ class QueryBuilder implements QueryBuilderInterface
     {
         return [
             'select' => [],
-            'from' => [],
+            'from' => [
+                'table' => null,
+                'alias' => null,
+            ],
             'distinct' => [],
             'join' => [],
             'set' => [],
@@ -602,7 +603,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $this->type = self::INSERT;
 
-        $this->sqlParts['from'] = $table;
+        $this->sqlParts['from']['table'] = $table;
 
         return $this;
     }
@@ -616,19 +617,27 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $this->type = self::UPDATE;
 
-        $this->sqlParts['from'] = $table;
+        $this->sqlParts['from']['table'] = $table;
 
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getAlias()
     {
-        return $this->_alias;
+        return $this->sqlParts['from']['alias'];
     }
 
-    public function setAlias($alias)
+    /**
+     * @param string $alias
+     *
+     * @return $this
+     */
+    public function setAlias(string $alias)
     {
-        $this->_alias = $alias;
+        $this->sqlParts['from']['alias'] = $alias;
 
         return $this;
     }
@@ -819,7 +828,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function getSQLForUpdate(): string
     {
-        $table = TableNameResolver::getTableName($this->sqlParts['from'], $this->tablePrefix);
+        $table = TableNameResolver::getTableName($this->sqlParts['from']['table'], $this->tablePrefix);
 
         $parts = [];
         $rows = $this->sqlParts['values'];
@@ -1178,14 +1187,16 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function buildFrom()
     {
-        if (empty($this->sqlParts['from'])) {
+        if (empty($this->sqlParts['from']['table'])) {
             return '';
         }
 
-        if (!empty($this->_alias) && !is_array($this->sqlParts['from'])) {
-            $tables = [$this->_alias => $this->sqlParts['from']];
+        if (!empty($this->sqlParts['from']['alias']) && !is_array($this->sqlParts['from']['table'])) {
+            $tables = [
+                $this->sqlParts['from']['alias']=> $this->sqlParts['from']['table']
+            ];
         } else {
-            $tables = (array) $this->sqlParts['from'];
+            $tables = (array) $this->sqlParts['from']['table'];
         }
 
         $quotedTableNames = [];
@@ -1216,7 +1227,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $this->type = self::DELETE;
 
-        $this->sqlParts['from'] = $table;
+        $this->sqlParts['from']['table'] = $table;
 
         return $this;
     }
@@ -1257,7 +1268,7 @@ class QueryBuilder implements QueryBuilderInterface
             $values[] = '('.implode(', ', $record).')';
         }
 
-        $table = $this->getQuotedName($this->sqlParts['from']);
+        $table = $this->getQuotedName($this->sqlParts['from']['table']);
 
         return sprintf(
             'INSERT INTO %s (%s) VALUES %s',
