@@ -112,7 +112,13 @@ class ExpressionBuilder extends BaseExpressionBuilder
 
                 $result[] = call_user_func_array([$this, $method], [
                     $adapter,
-                    sprintf('JSON_EXTRACT(%s, %s)', $this->getQuotedName($x), $this->literal('$.'.$name)),
+                    sprintf(
+                        'JSON_EXTRACT(%s, %s)',
+                        $this->getQuotedName($x),
+                        sprintf(
+                            "CONCAT('$.', JSON_QUOTE(%s))",
+                            $this->literal($name)
+                        )),
                     $value,
                 ]);
             }
